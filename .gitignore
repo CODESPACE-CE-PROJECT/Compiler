@@ -1,0 +1,6 @@
+#ignore env file
+.env
+
+#temp folder
+temp/
+node_modules
