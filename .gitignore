@@ -3,4 +3,5 @@
 
 #temp folder
 temp/
-node_modules
+node_modules/
+/dist

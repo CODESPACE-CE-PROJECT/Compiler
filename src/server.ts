@@ -6,9 +6,9 @@ import helmet from "helmet";
 import cluster from 'cluster';
 
 // Router
-import { serverRouter } from "./route/server.route";
+import { serverRouter } from "./routes/server.route";
 import { environment } from "./config/environment";
-import { compilerRouter } from "./route/compiler.route";
+import { compilerRouter } from "./routes/compiler.route";
 
 config();
 

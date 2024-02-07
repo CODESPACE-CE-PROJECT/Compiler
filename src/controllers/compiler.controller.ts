@@ -2,9 +2,6 @@ import { Request, Response } from "express";
 import strip from "strip-comments"
 import tress from "tress"
 import { resultService } from "../services/result.service";
-import { ExecutionResult } from "../interfaces/compiler.interface";
-
-
 
 
 const queue = tress((req: any, next: any) => {
@@ -20,23 +17,22 @@ export const add_request_to_queue = async (req: Request, res: Response) => {
     queue.push(req as any)
     queue.success = function(data) {
       res.status(200).json({
-        message: "REQUEST_ADD_TO_QUEUE",
+        message: "Process Success",
         data: data.result
       })
     }
   } catch (error) {
     res.status(304).json({
-      message: "FAILED_TO_ADDED_TO_QUEUE",
+      message: "Process Failed",
     })
   }
 }
 
-const compiler = async ({ sourceCode, language }: { sourceCode: string; language: string }) => {
+const compiler = async ({ sourceCode, language , input}: { sourceCode: string; language: string, input:string}) => {
   try {
     const updatedSourceCode = strip(sourceCode);
-    // console.log(updatedSourceCode)
 
-    const result = await resultService.outputResult(updatedSourceCode);
+    const result = await resultService.outputResult(updatedSourceCode, language,input);
     return result.result;
   } catch (error) {
     console.log((error as Error).message);
