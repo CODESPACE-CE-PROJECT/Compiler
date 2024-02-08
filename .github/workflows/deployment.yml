@@ -23,9 +23,9 @@ jobs:
             
             - name: Clear Cache 🫧
               run: |
-                docker stop backend || true
-                docker rm backend || true
-                docker rmi backend-backend:latest || true
+                docker stop compiler || true
+                docker rm compiler || true
+                docker rmi compiler-compiler:latest || true
             
             - name: Run Image ✅
               run: |
@@ -35,7 +35,7 @@ jobs:
               uses: fjogeleit/http-request-action@v1
               with:
                 timeout: 60000
-                url: 'https://discord.com/api/webhooks/1205012959085068328/ezj0kI9AMrPCkaZGHr4ERzJS2ZXY5KNPDDkBnKF7Ko1sLVdgSb-rEOf34yy48oe7GlEw'
+                url: 'https://discord.com/api/webhooks/1205020256087711745/vgorLb_Eot-0F5fQLTcA-vLX2s4C7A6YRzYBcqBiePzzyfT004bsw-5UhUfqIvlFPTIH'
                 method: 'POST'
                 customHeaders: '{"Content-Type": "application/json"}'
                 data: '{"content": "CEPP Backend Build ✅","embeds": [{"title": "Backend url","description": "https://compiler-api.unixvextor.com"}]}'
