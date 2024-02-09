@@ -52,16 +52,7 @@ export const compilerService = {
         fs.writeFileSync(filePath, sourceCode);
         return { result: "", filePath }
       }
-      return {result: "Error CreateFile", filePath:""}
-      // const folderPath = path.resolve(__dirname, "../../temp/cpp");
-      // const filePath = path.resolve(folderPath, `${fileName}.cpp`)
-      // console.log(folderPath)
-      // if (!fs.existsSync(folderPath)) {
-      //   fs.mkdirSync(folderPath, { recursive: true })
-      // }
-
-      // fs.writeFileSync(filePath, sourceCode);
-      // return { result: "", filePath }
+      return {result: "Error CreateFile", filePath:""} 
     } catch (error) {
       console.log(error)
       return { result: "Error to create file", filePath: "" };
@@ -70,7 +61,6 @@ export const compilerService = {
 
   compileFile: async (filePath: string, language: string): Promise<ICompileFile> => {
     try {
-      console.log(filePath)
       const regex = /([^\\/:*?"<>|\r\n"]+).\w+$/;
       const filenameMatch = filePath.match(regex);
       const filename = filenameMatch ? filenameMatch[1] : null;
@@ -115,7 +105,6 @@ export const compilerService = {
             executeablePath,
             options,
             (error, stdout, stderr) => {
-              // console.log("run executable.")
                 if (error) {
                   resolve({
                     result: "Error",
@@ -140,14 +129,12 @@ export const compilerService = {
           }
         }else{
           if(language == "javascript") language = "node"
-          // console.log(language)
           const child = spawnSync(language,[executeablePath], {stdio:'pipe', input: input});
           if(child.error){
             resolve({
               result: "Error"
             })
           }else{
-            // console.log(child.output.toString())
             resolve({
               result: child.output.toString()
             })
