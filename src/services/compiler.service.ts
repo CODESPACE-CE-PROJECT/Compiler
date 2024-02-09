@@ -42,9 +42,9 @@ export const compilerService = {
 
         fs.writeFileSync(filePath, sourceCode);
         return { result: "", filePath }
-      } else if(language === "javascript"){
-        const folderPath = path.resolve(__dirname, "../../temp/javascript")
-        const filePath = path.resolve(folderPath, `${fileName}.js`)
+      } else if(language === "java"){
+        const folderPath = path.resolve(__dirname, "../../temp/java")
+        const filePath = path.resolve(folderPath, `${fileName}.java`)
         if (!fs.existsSync(folderPath)) {
          fs.mkdirSync(folderPath, { recursive: true })
         }
@@ -63,8 +63,8 @@ export const compilerService = {
     try {
       const regex = /([^\\/:*?"<>|\r\n"]+).\w+$/;
       const filenameMatch = filePath.match(regex);
-      const filename = filenameMatch ? filenameMatch[1] : null;
-
+      const filename = filenameMatch ? language === "java" ? filenameMatch[0]:filenameMatch[1] : null;
+      
       if (!filename) {
         throw new Error("INVALID_FILEPATH");
       } 
@@ -83,6 +83,13 @@ export const compilerService = {
         }
         executablePath = path.join(exeFolerPath, filename);
         execSync(`gcc -w -std=c++14 ${filePath} -o ${executablePath}`);
+      }else if (language === "java"){
+        const exeFolerPath = "./temp/exe-java";
+        if(!fs.existsSync(exeFolerPath)){
+          fs.mkdirSync(exeFolerPath, {recursive: true})
+        }
+        executablePath = path.join(exeFolerPath);
+        execSync(`javac  -d ${executablePath} ${filePath} `);
       }
        return { result: "", executablePath: executablePath }; 
    } catch (error) {
@@ -92,7 +99,8 @@ export const compilerService = {
   Run: async (
     executeablePath: string,
     language: string,
-    input: string
+    input: string,
+    filenam: string,
   ): Promise<ExecutionResult> => {
     return new Promise(async (resolve, reject) => {
       try {
@@ -128,8 +136,8 @@ export const compilerService = {
             })
           }
         }else{
-          if(language == "javascript") language = "node"
-          const child = spawnSync(language,[executeablePath], {stdio:'pipe', input: input});
+            // console.log(executeablePath)
+          const child = spawnSync(language,["-cp",executeablePath,filenam], {stdio:'pipe', input: input});
           if(child.error){
             resolve({
               result: "Error"

@@ -28,11 +28,11 @@ export const add_request_to_queue = async (req: Request, res: Response) => {
   }
 }
 
-const compiler = async ({ sourceCode, language , input}: { sourceCode: string; language: string, input:string}) => {
+const compiler = async ({ sourceCode, language , input, fileName}: { sourceCode: string; language: string, input:string, fileName:string}) => {
   try {
     const updatedSourceCode = strip(sourceCode);
 
-    const result = await resultService.outputResult(updatedSourceCode, language,input);
+    const result = await resultService.outputResult(updatedSourceCode, language,input, fileName);
     return result.result;
   } catch (error) {
     console.log((error as Error).message);

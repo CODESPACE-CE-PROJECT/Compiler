@@ -39,7 +39,7 @@ RUN apk add --no-cache \
     gcc \
     g++ \
     make \
-    python3
+    openjdk17-jdk
 
 COPY --chown=node:node --from=Build /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=Build /usr/src/app/dist ./dist
