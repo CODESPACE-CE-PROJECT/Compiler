@@ -3,5 +3,7 @@
 
 #temp folder
 temp/
+
+terminal
 node_modules/
 /dist
