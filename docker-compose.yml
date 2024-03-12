@@ -8,6 +8,7 @@ services:
     
     environment:
       PORT: 3002
+      DOCKER_HOST: 10.10.0.151
     
     ports:
       - 3002:3002

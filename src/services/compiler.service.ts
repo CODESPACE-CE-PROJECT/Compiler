@@ -14,7 +14,6 @@ export const compilerService = {
     language: string,
   ): Promise<ICreateFile> => {
     try {
-      
       if(language === "c"){
         const folderPath = path.resolve(__dirname,"../../temp/c")
         const filePath = path.resolve(folderPath, `${fileName}.c`)
@@ -64,7 +63,7 @@ export const compilerService = {
       const regex = /([^\\/:*?"<>|\r\n"]+).\w+$/;
       const filenameMatch = filePath.match(regex);
       const filename = filenameMatch ? language === "java" ? filenameMatch[0]:filenameMatch[1] : null;
-      
+      console.log(filename) 
       if (!filename) {
         throw new Error("INVALID_FILEPATH");
       } 
@@ -135,15 +134,26 @@ export const compilerService = {
               }
             })
           }
-        }else{
-            // console.log(executeablePath)
+        }else if(language === "java"){
           const child = spawnSync(language,["-cp",executeablePath,filenam], {stdio:'pipe', input: input});
           if(child.error){
             resolve({
               result: "Error"
             })
           }else{
+            resolve({   
+              result: child.output.toString()
+            })
+          }
+        }else if (language === "python"){
+          const child = spawnSync(language,[executeablePath], {stdio:'pipe', input: input});
+          if(child.error){
             resolve({
+              result: "Error"
+            })
+          }else{
+            console.log(child.output.toString())
+            resolve({   
               result: child.output.toString()
             })
           }
