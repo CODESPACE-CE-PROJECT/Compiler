@@ -8,18 +8,10 @@ services:
     
     environment:
       PORT: 3002
-      DOCKER_HOST: 10.10.0.151
+      DOCKER_HOST: 10.10.10.246
     
     ports:
       - 3002:3002
 
-    networks:
-      - backend
-      - frontend
     restart: always
-
-networks:
-  backend:
-    external: true
-  frontend:
-    external: true
+networks_mode: host
