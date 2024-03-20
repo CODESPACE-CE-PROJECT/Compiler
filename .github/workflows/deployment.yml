@@ -13,12 +13,8 @@ jobs:
             - name: Clone Repo 🤖
               uses: actions/checkout@v3
             
-            - name: free disk space
+            - name: show disk space
               run: |
-                echo ${{ secrets.HOST_PASS }} | sudo -S su
-                sudo swapoff -a
-                sudo rm -f /swapfile
-                sudo apt clean
                 df -h
             
             - name: Clear Cache 🫧
