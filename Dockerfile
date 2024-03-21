@@ -44,4 +44,4 @@ RUN apk add --no-cache \
 COPY --chown=node:node --from=Build /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=Build /usr/src/app/dist ./dist
 
-CMD [ "node", "dist/server.js" ]
+CMD [ "node", "dist/server.js"]

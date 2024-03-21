@@ -1,28 +1,14 @@
-version: '3'
+version: '3.9'
 services:
   compiler:
     container_name: compiler
     build:
       context: .
       dockerfile: Dockerfile
-    
+
     environment:
       PORT: 3002
-      DOCKER_HOST: 10.10.0.151
+      DOCKER_HOST: 10.10.10.246
     
-    ports:
-      - 3002:3002
-
-    networks:
-      - backend
-      - frontend
-      - host
     restart: always
-
-networks:
-  host:
-    external: true
-  backend:
-    external: true
-  frontend:
-    external: true
+    network_mode: "host"
