@@ -1,12 +1,11 @@
 import fs from "fs";
-import path from "path"
-import { execSync, execFile,spawnSync } from "child_process"
+import path from "path";
+import { execSync, execFile, spawnSync } from "child_process";
 import {
   ExecutionResult,
   ICompileFile,
   ICreateFile,
-} from "../interfaces/compiler.interface"
-
+} from "../interfaces/compiler.interface";
 export const compilerService = {
   createFile: async (
     sourceCode: string,
@@ -14,85 +13,92 @@ export const compilerService = {
     language: string,
   ): Promise<ICreateFile> => {
     try {
-      if(language === "c"){
-        const folderPath = path.resolve(__dirname,"../../temp/c")
-        const filePath = path.resolve(folderPath, `${fileName}.c`)
+      if (language === "c") {
+        const folderPath = path.resolve(__dirname, "../../temp/c");
+        const filePath = path.resolve(folderPath, `${fileName}.c`);
         if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
+          fs.mkdirSync(folderPath, { recursive: true });
         }
 
         fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
-      } else if(language === "cpp") {
-        const folderPath = path.resolve(__dirname,"../../temp/cpp")
-        const filePath = path.resolve(folderPath, `${fileName}.cpp`)
+        return { result: "", filePath };
+      } else if (language === "cpp") {
+        const folderPath = path.resolve(__dirname, "../../temp/cpp");
+        const filePath = path.resolve(folderPath, `${fileName}.cpp`);
         if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
+          fs.mkdirSync(folderPath, { recursive: true });
         }
 
         fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
-      } else if(language === "python"){
-        const folderPath = path.resolve(__dirname, "../../temp/python")
-        const filePath = path.resolve(folderPath, `${fileName}.py`)
+        return { result: "", filePath };
+      } else if (language === "python") {
+        const folderPath = path.resolve(__dirname, "../../temp/python");
+        const filePath = path.resolve(folderPath, `${fileName}.py`);
         if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
+          fs.mkdirSync(folderPath, { recursive: true });
         }
 
         fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
-      } else if(language === "java"){
-        const folderPath = path.resolve(__dirname, "../../temp/java")
-        const filePath = path.resolve(folderPath, `${fileName}.java`)
+        return { result: "", filePath };
+      } else if (language === "java") {
+        const folderPath = path.resolve(__dirname, "../../temp/java");
+        const filePath = path.resolve(folderPath, `${fileName}.java`);
         if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
+          fs.mkdirSync(folderPath, { recursive: true });
         }
 
         fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
+        return { result: "", filePath };
       }
-      return {result: "Error CreateFile", filePath:""} 
+      return { result: "Error CreateFile", filePath: "" };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return { result: "Error to create file", filePath: "" };
     }
   },
 
-  compileFile: async (filePath: string, language: string): Promise<ICompileFile> => {
+  compileFile: async (
+    filePath: string,
+    language: string,
+  ): Promise<ICompileFile> => {
     try {
       const regex = /([^\\/:*?"<>|\r\n"]+).\w+$/;
       const filenameMatch = filePath.match(regex);
-      const filename = filenameMatch ? language === "java" ? filenameMatch[0]:filenameMatch[1] : null;
-      console.log(filename) 
+      const filename = filenameMatch
+        ? language === "java"
+          ? filenameMatch[0]
+          : filenameMatch[1]
+        : null;
+      console.log(filename);
       if (!filename) {
         throw new Error("INVALID_FILEPATH");
-      } 
-      var executablePath:string = "";
-      if (language === "cpp"){
+      }
+      var executablePath: string = "";
+      if (language === "cpp") {
         const exeFolerPath = "./temp/exe-cpp";
         if (!fs.existsSync(exeFolerPath)) {
           fs.mkdirSync(exeFolerPath, { recursive: true });
         }
         executablePath = path.join(exeFolerPath, filename);
         execSync(`g++ -w -std=c++14 ${filePath} -o ${executablePath}`);
-      }else if (language === "c"){
+      } else if (language === "c") {
         const exeFolerPath = "./temp/exe-c";
         if (!fs.existsSync(exeFolerPath)) {
           fs.mkdirSync(exeFolerPath, { recursive: true });
         }
         executablePath = path.join(exeFolerPath, filename);
         execSync(`gcc -w -std=c++14 ${filePath} -o ${executablePath}`);
-      }else if (language === "java"){
+      } else if (language === "java") {
         const exeFolerPath = "./temp/exe-java";
-        if(!fs.existsSync(exeFolerPath)){
-          fs.mkdirSync(exeFolerPath, {recursive: true})
+        if (!fs.existsSync(exeFolerPath)) {
+          fs.mkdirSync(exeFolerPath, { recursive: true });
         }
         executablePath = path.join(exeFolerPath);
         execSync(`javac  -d ${executablePath} ${filePath} `);
       }
-       return { result: "", executablePath: executablePath }; 
-   } catch (error) {
-      return { result: "Error to compile File", executablePath: "" }
+      return { result: "", executablePath: executablePath };
+    } catch (error) {
+      return { result: "Error to compile File", executablePath: "" };
     }
   },
   Run: async (
@@ -106,22 +112,22 @@ export const compilerService = {
         const options = {
           timeout: 1000,
           maxBuffer: 1024 * 1024,
-        }
-        if(language === "c" || language === "cpp"){
+        };
+        if (language === "c" || language === "cpp") {
           const child = await execFile(
             executeablePath,
             options,
             (error, stdout, stderr) => {
-                if (error) {
-                  resolve({
-                    result: "Error",
-                  });
-                } else {
-                  resolve({
-                    result: stdout,
-                  });
-                }
-            }
+              if (error) {
+                resolve({
+                  result: "Error",
+                });
+              } else {
+                resolve({
+                  result: stdout,
+                });
+              }
+            },
           );
           if (input !== "") {
             child.stdin?.pipe(child.stdin);
@@ -130,38 +136,43 @@ export const compilerService = {
             child.stdin?.end();
             child.stdin?.on("error", (error: Error) => {
               if (error.message !== "write") {
-                resolve({ result: "ERROR" })
+                resolve({ result: "ERROR" });
               }
-            })
+            });
           }
-        }else if(language === "java"){
-          const child = spawnSync(language,["-cp",executeablePath,filenam], {stdio:'pipe', input: input});
-          if(child.error){
+        } else if (language === "java") {
+          const child = spawnSync(language, ["-cp", executeablePath, filenam], {
+            stdio: "pipe",
+            input: input,
+          });
+          if (child.error) {
             resolve({
-              result: "Error"
-            })
-          }else{
-            resolve({   
-              result: child.output.toString()
-            })
+              result: "Error",
+            });
+          } else {
+            resolve({
+              result: child.output.toString(),
+            });
           }
-        }else if (language === "python"){
-          const child = spawnSync(language,[executeablePath], {stdio:'pipe', input: input});
-          if(child.error){
+        } else if (language === "python") {
+          const child = spawnSync(language, [executeablePath], {
+            stdio: "pipe",
+            input: input,
+          });
+          if (child.error) {
             resolve({
-              result: "Error"
-            })
-          }else{
-            console.log(child.output.toString())
-            resolve({   
-              result: child.output.toString()
-            })
+              result: "Error",
+            });
+          } else {
+            console.log(child.output.toString());
+            resolve({
+              result: child.output.toString(),
+            });
           }
         }
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
-    })
-  }
+    });
+  },
 };
-

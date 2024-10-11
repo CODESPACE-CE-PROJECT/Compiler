@@ -7,3 +7,5 @@ temp/
 terminal
 node_modules/
 /dist
+
+src/sample.ts

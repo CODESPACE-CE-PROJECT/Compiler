@@ -1,47 +1,74 @@
-FROM node:18-alpine As development
+# Development stage
+FROM node:20.18.0-alpine AS development
 
 WORKDIR /usr/src/app
 
-COPY --chown=node:node package.json ./
+# Copy package files
+COPY --chown=node:node package.json yarn.lock ./
 
-COPY --chown=node:node yarn.lock ./
+# Install dependencies
+RUN yarn install
 
-RUN yarn
-
-COPY --chown=node:mode . .
-
-USER node
-
-FROM node:18-alpine As Build
-
-WORKDIR /usr/src/app
-
-COPY --chown=node:node package.json ./
-
-COPY --chown=node:node yarn.lock ./
-
-COPY --chown=node:node --from=development  /usr/src/app/node_modules ./node_modules
-
+# Copy the rest of the app files
 COPY --chown=node:node . .
 
+# Set environment variables for hot reload
+ENV NODE_ENV=development
+
+# Build stage
+FROM node:20.18.0-alpine AS build
+
+WORKDIR /usr/src/app
+
+# Copy necessary files for the build
+COPY --chown=node:node package.json yarn.lock ./
+
+# Copy node_modules from development
+COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
+
+# Copy app files and build the app
+COPY --chown=node:node . .
 RUN yarn build
 
-ENV NODE_ENV production
+# Install only production dependencies
+RUN yarn install --production --frozen-lockfile
 
-RUN yarn install --frozen-lockfile 
+# Production stage
+FROM node:20.18.0-slim AS production
 
+# Install required build dependencies for isolate
+RUN apt-get update && apt-get install -y \
+  libcap-dev \
+  asciidoc \
+  build-essential \
+  pkg-config \
+  libsystemd-dev \
+  git \
+  gcc \
+  g++ \
+  make \
+  openjdk-17-jdk \
+  libxml2-utils \
+  --no-install-recommends && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Clone and build isolate
+RUN git clone https://github.com/ioi/isolate.git && \
+  cd isolate && \
+  make install && \
+  rm -rf /isolate
+
+WORKDIR /usr/src/app
+
+# Copy the built app and node_modules from the build stage
+COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
+
+# Set the node user for running the app
 USER node
 
-FROM node:18-alpine As production
+# Expose the port
+EXPOSE 3002
 
-RUN apk add --no-cache \
-    build-base \
-    gcc \
-    g++ \
-    make \
-    openjdk17-jdk
-    
-COPY --chown=node:node --from=Build /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node --from=Build /usr/src/app/dist ./dist
-
-CMD [ "node", "dist/server.js"]
+# Start the app with nodemon
+CMD ["node", "dist/server.js"]

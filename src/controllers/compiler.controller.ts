@@ -1,40 +1,31 @@
 import { Request, Response } from "express";
-import strip from "strip-comments"
-import tress from "tress"
-import { resultService } from "../services/result.service";
+import { ISubmission } from "../interfaces/submission.interface";
+import { ICompile } from "../interfaces/compiler.interface";
+import { rabbitMQService } from "../services/rabbitmq.service";
 
-
-const queue = tress((req: any, next: any) => {
-  try {
-    compiler(req.body).then((result) => {next(null, result)});
-  } catch (error) {
-    console.log((error as Error).message);
-  }
-})
-
-export const add_request_to_queue = async (req: Request, res: Response) => {
-  try {
-    queue.push(req as any)
-    queue.success = function(data) {
-      res.status(200).json({
-        message: "Process Success",
-        data: data.result
-      })
+export const compilerController = {
+  addSubmissionToRabbitMQ: async (req: Request, res: Response) => {
+    const submission: ISubmission = req.body;
+    if (!submission) {
+      return res.status(404).json({
+        message: "Missing Required Fields",
+      });
     }
-  } catch (error) {
-    res.status(304).json({
-      message: "Process Failed",
-    })
-  }
-}
-
-const compiler = async ({ sourceCode, language , input, fileName}: { sourceCode: string; language: string, input:string, fileName:string}) => {
-  try {
-    const updatedSourceCode = strip(sourceCode);
-
-    const result = await resultService.outputResult(updatedSourceCode, language,input, fileName);
-    return result.result;
-  } catch (error) {
-    console.log((error as Error).message);
-  }
-}
+    await rabbitMQService.sendDataToQueue("submission", submission);
+    return res.status(200).json({
+      message: "Add To Queue Successfully",
+    });
+  },
+  compilerCode: async (req: Request, res: Response) => {
+    const data: ICompile = req.body;
+    if (!data) {
+      return res.status(404).json({
+        message: "Missing Required Fields",
+      });
+    }
+    await rabbitMQService.sendDataToQueue("compile", data);
+    return res.status(200).json({
+      message: "Add To Queue Successfully",
+    });
+  },
+};

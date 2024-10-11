@@ -6,4 +6,5 @@ node_modules/
 dist/
 logs/
 temp/
-*.env
+*.env.example
+.github
