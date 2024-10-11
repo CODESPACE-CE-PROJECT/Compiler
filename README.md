@@ -19,7 +19,7 @@ yarn dev
 ```
 
 ## Development With Docker Hot Reload 🔃
-## Docker 🐳
+### Docker 🐳
 
 ```bash
 docker compose -f docker-compose.dev.yaml --watch --build
