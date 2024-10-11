@@ -18,16 +18,15 @@ yarn
 yarn dev
 ```
 
-## OR
-
-## Docker Hot Reload
+## Development With Docker Hot Reload 🔃
+## Docker 🐳
 
 ```bash
 docker compose -f docker-compose.dev.yaml --watch --build
 ```
 
 ## Deploy ⚙️
-### Docker
+### Docker🐳
 
 ```bash
 docker compose -f docker-compose.depoly.yaml up -d
