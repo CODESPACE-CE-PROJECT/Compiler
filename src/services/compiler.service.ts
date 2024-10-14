@@ -5,171 +5,102 @@ import {
   ExecutionResult,
   ICompileFile,
   ICreateFile,
+  IMoveFile,
+  languageType,
 } from "../interfaces/compiler.interface";
+import log from "../utils/logger";
 export const compilerService = {
   createFile: async (
     sourceCode: string,
     fileName: string,
-    language: string,
+    language: languageType,
   ): Promise<ICreateFile> => {
     try {
-      if (language === "c") {
-        const folderPath = path.resolve(__dirname, "../../temp/c");
-        const filePath = path.resolve(folderPath, `${fileName}.c`);
-        if (!fs.existsSync(folderPath)) {
-          fs.mkdirSync(folderPath, { recursive: true });
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath };
-      } else if (language === "cpp") {
-        const folderPath = path.resolve(__dirname, "../../temp/cpp");
-        const filePath = path.resolve(folderPath, `${fileName}.cpp`);
-        if (!fs.existsSync(folderPath)) {
-          fs.mkdirSync(folderPath, { recursive: true });
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath };
-      } else if (language === "python") {
-        const folderPath = path.resolve(__dirname, "../../temp/python");
-        const filePath = path.resolve(folderPath, `${fileName}.py`);
-        if (!fs.existsSync(folderPath)) {
-          fs.mkdirSync(folderPath, { recursive: true });
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath };
-      } else if (language === "java") {
-        const folderPath = path.resolve(__dirname, "../../temp/java");
-        const filePath = path.resolve(folderPath, `${fileName}.java`);
-        if (!fs.existsSync(folderPath)) {
-          fs.mkdirSync(folderPath, { recursive: true });
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath };
+      const folderName =
+        language === languageType.C
+          ? "c"
+          : language === languageType.CPP
+            ? "cpp"
+            : language === languageType.PYTHON
+              ? "python"
+              : language == languageType.JAVA
+                ? "java"
+                : "";
+      const languagetype =
+        language === languageType.C
+          ? "c"
+          : language === languageType.CPP
+            ? "cpp"
+            : language === languageType.PYTHON
+              ? "py"
+              : language == languageType.JAVA
+                ? "java"
+                : "";
+      const folderPath = path.resolve(__dirname, `../../temp/${folderName}`);
+      const filePath = path.resolve(folderPath, `${fileName}.${languagetype}`);
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
       }
-      return { result: "Error CreateFile", filePath: "" };
+      fs.writeFileSync(filePath, sourceCode);
+      return { result: "", filePath, file: `${fileName}.${languagetype}` };
     } catch (error) {
-      console.log(error);
-      return { result: "Error to create file", filePath: "" };
+      return { result: "Error to create file", filePath: "", file: "" };
     }
   },
-
-  compileFile: async (
+  moveFileToIsolate: async (
     filePath: string,
+    boxID: number,
+  ): Promise<IMoveFile> => {
+    try {
+      const sanboxPath = execSync(`isolate --init --box-id=${boxID}`, {
+        encoding: "utf-8",
+      });
+      execSync(`mv ${filePath} ${sanboxPath.trim()}/box/`);
+      return { result: "", sanboxPath: `${sanboxPath.trim()}/box` };
+    } catch (error) {
+      return { result: "Error Move File To isolate", sanboxPath: "" };
+    }
+  },
+  compileFile: async (
+    sanboxPath: string,
     language: string,
+    file: string,
   ): Promise<ICompileFile> => {
     try {
-      const regex = /([^\\/:*?"<>|\r\n"]+).\w+$/;
-      const filenameMatch = filePath.match(regex);
-      const filename = filenameMatch
-        ? language === "java"
-          ? filenameMatch[0]
-          : filenameMatch[1]
-        : null;
-      console.log(filename);
-      if (!filename) {
+      const regex = /\w+/;
+      const filenameMatch = file.match(regex);
+      log.info(`filename: ${filenameMatch}`);
+      if (!filenameMatch) {
         throw new Error("INVALID_FILEPATH");
       }
-      var executablePath: string = "";
-      if (language === "cpp") {
-        const exeFolerPath = "./temp/exe-cpp";
-        if (!fs.existsSync(exeFolerPath)) {
-          fs.mkdirSync(exeFolerPath, { recursive: true });
-        }
-        executablePath = path.join(exeFolerPath, filename);
-        execSync(`g++ -w -std=c++14 ${filePath} -o ${executablePath}`);
-      } else if (language === "c") {
-        const exeFolerPath = "./temp/exe-c";
-        if (!fs.existsSync(exeFolerPath)) {
-          fs.mkdirSync(exeFolerPath, { recursive: true });
-        }
-        executablePath = path.join(exeFolerPath, filename);
-        execSync(`gcc -w -std=c++14 ${filePath} -o ${executablePath}`);
-      } else if (language === "java") {
-        const exeFolerPath = "./temp/exe-java";
-        if (!fs.existsSync(exeFolerPath)) {
-          fs.mkdirSync(exeFolerPath, { recursive: true });
-        }
-        executablePath = path.join(exeFolerPath);
-        execSync(`javac  -d ${executablePath} ${filePath} `);
+      const fullPath = path.join(sanboxPath, file);
+      if (language === languageType.C) {
+        execSync(
+          `gcc -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
+          { encoding: "utf-8" },
+        );
+      } else if (language === languageType.CPP) {
+        execSync(
+          `g++ -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
+          { encoding: "utf-8" },
+        );
+      } else if (language === languageType.JAVA) {
+        console.log(fullPath);
+        execSync(`javac -d ${sanboxPath}/${filenameMatch} ${fullPath}`);
       }
-      return { result: "", executablePath: executablePath };
+      return { result: "" };
     } catch (error) {
-      return { result: "Error to compile File", executablePath: "" };
+      return { result: "Error to compile File" };
     }
   },
   Run: async (
     executeablePath: string,
     language: string,
     input: string,
-    filenam: string,
+    filename: string,
   ): Promise<ExecutionResult> => {
     return new Promise(async (resolve, reject) => {
       try {
-        const options = {
-          timeout: 1000,
-          maxBuffer: 1024 * 1024,
-        };
-        if (language === "c" || language === "cpp") {
-          const child = await execFile(
-            executeablePath,
-            options,
-            (error, stdout, stderr) => {
-              if (error) {
-                resolve({
-                  result: "Error",
-                });
-              } else {
-                resolve({
-                  result: stdout,
-                });
-              }
-            },
-          );
-          if (input !== "") {
-            child.stdin?.pipe(child.stdin);
-            child.stdin?.setDefaultEncoding("utf8");
-            child.stdin?.write(input);
-            child.stdin?.end();
-            child.stdin?.on("error", (error: Error) => {
-              if (error.message !== "write") {
-                resolve({ result: "ERROR" });
-              }
-            });
-          }
-        } else if (language === "java") {
-          const child = spawnSync(language, ["-cp", executeablePath, filenam], {
-            stdio: "pipe",
-            input: input,
-          });
-          if (child.error) {
-            resolve({
-              result: "Error",
-            });
-          } else {
-            resolve({
-              result: child.output.toString(),
-            });
-          }
-        } else if (language === "python") {
-          const child = spawnSync(language, [executeablePath], {
-            stdio: "pipe",
-            input: input,
-          });
-          if (child.error) {
-            resolve({
-              result: "Error",
-            });
-          } else {
-            console.log(child.output.toString());
-            resolve({
-              result: child.output.toString(),
-            });
-          }
-        }
       } catch (error) {
         console.log(error);
       }

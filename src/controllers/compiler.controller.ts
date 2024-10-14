@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ISubmission } from "../interfaces/submission.interface";
-import { ICompile } from "../interfaces/compiler.interface";
+import { ICompileRequest } from "../interfaces/compiler.interface";
 import { rabbitMQService } from "../services/rabbitmq.service";
 
 export const compilerController = {
@@ -17,13 +17,13 @@ export const compilerController = {
     });
   },
   compilerCode: async (req: Request, res: Response) => {
-    const data: ICompile = req.body;
+    const data: ICompileRequest = req.body;
     if (!data) {
       return res.status(404).json({
         message: "Missing Required Fields",
       });
     }
-    await rabbitMQService.sendDataToQueue("compile", data);
+    await rabbitMQService.sendDataToQueue("compiler", data);
     return res.status(200).json({
       message: "Add To Queue Successfully",
     });

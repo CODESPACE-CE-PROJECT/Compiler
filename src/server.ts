@@ -6,7 +6,7 @@ import helmet from "helmet";
 import cluster from "cluster";
 import swaggerDocs from "./utils/swagger";
 import logger from "./utils/logger";
-
+import { rabbitMQService } from "./services/rabbitmq.service";
 // Router
 import { serverRouter } from "./routes/server.route";
 import { environment } from "./config/environment";
@@ -51,7 +51,10 @@ if (cluster.isPrimary) {
   });
 } else {
   app.listen(environment.PORT, "0.0.0.0", () => {
-    logger.info(`Server ready on port ${environment.PORT}`);
+    logger.info(
+      `Server ready on port ${environment.PORT} worker pid: ${process.pid}`,
+    );
     swaggerDocs(app);
+    rabbitMQService.receiveData();
   });
 }

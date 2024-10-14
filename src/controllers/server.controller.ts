@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
 
 export const initServer = async (_req: Request, res: Response) => {
-  res.status(200).send("CE Project Code Space Compiler");
+  res.status(200).send("CE  Code Space Compiler");
 };

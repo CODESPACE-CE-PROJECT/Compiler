@@ -41,3 +41,4 @@ ENV NODE_ENV=development
 
 # Expose the port
 EXPOSE 3002
+

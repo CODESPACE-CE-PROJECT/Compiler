@@ -44,6 +44,8 @@ const router = Router();
  *               language:
  *                 type: string
  *                 description: The programming language of the source code
+ *               fileName:
+ *                 type: string
  *             required:
  *               - problemId
  *               - sourceCode
@@ -53,11 +55,7 @@ const router = Router();
  *         description: Successfully added to queue
  */
 
-router.post(
-  "/submission",
-  authorization,
-  compilerController.addSubmissionToRabbitMQ,
-);
+router.post("/submission", compilerController.addSubmissionToRabbitMQ);
 
 /**
  * @openapi
@@ -78,6 +76,8 @@ router.post(
  *                 type: string
  *               language:
  *                 type: string
+ *               fileName:
+ *                 type: string
  *             required:
  *               - sourceCode
  *               - language
@@ -89,13 +89,16 @@ router.post(
  *                 type: string
  *               language:
  *                 type: string
+ *               fileName:
+ *                 type: string
  *             required:
  *               - sourceCode
  *               - language
+ *               - fileName
  *     responses:
  *       200:
  *         description: Successfully added to queue
  */
-router.post("/", authorization, compilerController.compilerCode);
+router.post("/", compilerController.compilerCode);
 
 export { router as compilerRouter };

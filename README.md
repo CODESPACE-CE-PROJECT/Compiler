@@ -22,11 +22,11 @@ yarn dev
 ### Docker 🐳
 
 ```bash
-docker compose -f docker-compose.dev.yaml --watch --build
+docker compose -f docker-compose.dev.yaml up --watch --build
 ```
 
 ## Deploy ⚙️
-### Docker🐳
+### Docker 🐳
 
 ```bash
 docker compose -f docker-compose.depoly.yaml up -d

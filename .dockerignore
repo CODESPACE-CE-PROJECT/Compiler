@@ -1,3 +1,4 @@
+docker-compose.*.yaml
 Dockerfile
 .dockerignore
 node_modules/
@@ -5,6 +6,6 @@ node_modules/
 .gitignore
 dist/
 logs/
-temp/
-*.env.example
+ear
+.env.example
 .github
