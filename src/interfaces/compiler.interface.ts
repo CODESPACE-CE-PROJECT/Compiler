@@ -14,6 +14,7 @@ export interface ICompileRequest {
   sourceCode: string;
   language: languageType;
   fileName: string;
+  input: string;
 }
 
 export interface IMoveFile {

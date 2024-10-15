@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { execSync, execFile, spawnSync } from "child_process";
+import { execSync } from "child_process";
 import {
   ExecutionResult,
   ICompileFile,
@@ -8,7 +8,6 @@ import {
   IMoveFile,
   languageType,
 } from "../interfaces/compiler.interface";
-import log from "../utils/logger";
 export const compilerService = {
   createFile: async (
     sourceCode: string,
@@ -49,27 +48,24 @@ export const compilerService = {
   },
   moveFileToIsolate: async (
     filePath: string,
-    boxID: number,
+    boxId: number,
   ): Promise<IMoveFile> => {
     try {
-      const sanboxPath = execSync(`isolate --init --box-id=${boxID}`, {
-        encoding: "utf-8",
-      });
-      execSync(`mv ${filePath} ${sanboxPath.trim()}/box/`);
-      return { result: "", sanboxPath: `${sanboxPath.trim()}/box` };
+      const sanboxPath = execSync(`isolate --init --box-id=${boxId}`);
+      execSync(`mv ${filePath} ${sanboxPath.toString().trim()}/box/`);
+      return { result: "", sanboxPath: `${sanboxPath.toString().trim()}/box` };
     } catch (error) {
       return { result: "Error Move File To isolate", sanboxPath: "" };
     }
   },
   compileFile: async (
     sanboxPath: string,
-    language: string,
+    language: languageType,
     file: string,
   ): Promise<ICompileFile> => {
     try {
       const regex = /\w+/;
       const filenameMatch = file.match(regex);
-      log.info(`filename: ${filenameMatch}`);
       if (!filenameMatch) {
         throw new Error("INVALID_FILEPATH");
       }
@@ -77,33 +73,65 @@ export const compilerService = {
       if (language === languageType.C) {
         execSync(
           `gcc -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
-          { encoding: "utf-8" },
         );
       } else if (language === languageType.CPP) {
         execSync(
           `g++ -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
-          { encoding: "utf-8" },
         );
       } else if (language === languageType.JAVA) {
-        console.log(fullPath);
-        execSync(`javac -d ${sanboxPath}/${filenameMatch} ${fullPath}`);
+        execSync(`javac -d ${sanboxPath}/${filenameMatch}.class ${fullPath}`);
       }
       return { result: "" };
-    } catch (error) {
-      return { result: "Error to compile File" };
+    } catch (error: any) {
+      const err = error.stdout.toString()
+        ? error.stdout.toString()
+        : error.stderr.toString();
+      return { result: err };
     }
   },
   Run: async (
-    executeablePath: string,
-    language: string,
+    boxId: number,
+    language: languageType,
+    sanboxPath: string,
     input: string,
-    filename: string,
+    file: string,
   ): Promise<ExecutionResult> => {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, _reject) => {
       try {
-      } catch (error) {
-        console.log(error);
+        execSync(`echo ${input} > ${sanboxPath.toString().trim()}/input.txt`);
+        const filenameMatch = file.match(/\w+/);
+        let stdout: string = "";
+        if (language === languageType.C || language === languageType.CPP) {
+          stdout = execSync(
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run ${filenameMatch}`,
+            { encoding: "utf-8" },
+          );
+        } else if (language === languageType.JAVA) {
+          stdout = execSync(
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/bin/java ${filenameMatch}`,
+            { encoding: "utf-8" },
+          );
+        } else if (language === languageType.PYTHON) {
+          stdout = execSync(
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/bin/python3 ${file}`,
+            { encoding: "utf-8" },
+          );
+        }
+        resolve({ result: stdout.toString() });
+      } catch (error: any) {
+        const err = error.stdout.toString()
+          ? error.stdout.toString()
+          : error.stderr.toString();
+        resolve({ result: err });
       }
     });
+  },
+
+  removeIsolateByBoxId: async (boxId: number) => {
+    try {
+      execSync(`isolate --box-id=${boxId} --cleanup`);
+    } catch (error) {
+      console.log(error);
+    }
   },
 };

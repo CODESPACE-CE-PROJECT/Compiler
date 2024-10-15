@@ -6,7 +6,7 @@ import {
   languageType,
 } from "../interfaces/compiler.interface";
 import strip from "strip-comments";
-import logger from "../utils/logger";
+import logger from "../utils/logger.util";
 import { resultService } from "./result.service";
 export const rabbitMQService = {
   sendDataToQueue: async (queueName: string, data: any) => {
@@ -58,12 +58,13 @@ export const rabbitMQService = {
           data.language === languageType.JAVA
             ? data.fileName
             : `${process.pid}`;
-        await resultService.outputResult(
+        const outputResult = await resultService.outputResult(
           updateSourceCode,
           data.language,
-          "1",
+          data.input,
           updateFilename,
         );
+        console.log(outputResult);
         channel.ack(msg);
       } catch (error) {
         throw new Error("Error receiveData");

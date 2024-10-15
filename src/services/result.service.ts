@@ -2,52 +2,17 @@ import { languageType } from "../interfaces/compiler.interface";
 import { compilerService } from "./compiler.service";
 
 export const resultService = {
-  //outputResultWithTestCase: async (
-  //  sourceCode: string,
-  //  language: string,
-  //  input: string,
-  //  filename: string,
-  //) => {
-  //  try {
-  //    if (language !== "java") {
-  //      filename = `${process.pid}`;
-  //    }
-  //    const { result: createFileResult, filePath } =
-  //      await compilerService.createFile(
-  //        sourceCode,
-  //        `${process.pid}`,
-  //        language,
-  //      );
-  //    if (createFileResult !== "") {
-  //      return { result: createFileResult };
-  //    }
-  //    if (language === "c" || language === "cpp" || language === "java") {
-  //      const { result: compileFileResult, executablePath } =
-  //        await compilerService.compileFile(filePath, language);
-  //
-  //      if (compileFileResult !== "") {
-  //        return { result: compileFileResult };
-  //      }
-  //      const result = await compilerService.Run(
-  //        executablePath,
-  //        language,
-  //        input,
-  //        filename,
-  //      );
-  //      return { result };
-  //    } else {
-  //      const result = await compilerService.Run(
-  //        filePath,
-  //        language,
-  //        input,
-  //        filename,
-  //      );
-  //      return { result };
-  //    }
-  //  } catch (error) {
-  //    return { result: "error" };
-  //  }
-  //},
+  outputResultWithTestCase: async (
+    sourceCode: string,
+    language: string,
+    input: string,
+    filename: string,
+  ) => {
+    try {
+    } catch (error) {
+      return { result: "error" };
+    }
+  },
   outputResult: async (
     sourceCode: string,
     language: languageType,
@@ -61,15 +26,33 @@ export const resultService = {
         file,
       } = await compilerService.createFile(sourceCode, filename, language);
       if (createFileResult !== "") {
-        return;
+        return { result: createFileResult };
       }
-      const boxId = Math.floor(Math.random() * 1000);
+      const boxId = process.pid % 1000;
       const { result: moveFileResult, sanboxPath } =
         await compilerService.moveFileToIsolate(filePath, boxId);
       if (moveFileResult !== "") {
-        return;
+        return { result: moveFileResult };
       }
-      await compilerService.compileFile(sanboxPath, language, file);
-    } catch (error) {}
+      const { result: resultCompile } = await compilerService.compileFile(
+        sanboxPath,
+        language,
+        file,
+      );
+      if (resultCompile) {
+        return { result: resultCompile };
+      }
+      const { result: resultRun } = await compilerService.Run(
+        boxId,
+        language,
+        sanboxPath,
+        input,
+        file,
+      );
+      await compilerService.removeIsolateByBoxId(boxId);
+      return { result: resultRun };
+    } catch (error) {
+      return { result: error };
+    }
   },
 };

@@ -4,8 +4,8 @@ import { config } from "dotenv";
 import os from "os";
 import helmet from "helmet";
 import cluster from "cluster";
-import swaggerDocs from "./utils/swagger";
-import logger from "./utils/logger";
+import swaggerDocs from "./utils/swagger.util";
+import logger from "./utils/logger.util";
 import { rabbitMQService } from "./services/rabbitmq.service";
 // Router
 import { serverRouter } from "./routes/server.route";

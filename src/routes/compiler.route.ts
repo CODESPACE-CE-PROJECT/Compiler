@@ -99,6 +99,6 @@ router.post("/submission", compilerController.addSubmissionToRabbitMQ);
  *       200:
  *         description: Successfully added to queue
  */
-router.post("/", compilerController.compilerCode);
+router.post("/", authorization, compilerController.compilerCode);
 
 export { router as compilerRouter };
