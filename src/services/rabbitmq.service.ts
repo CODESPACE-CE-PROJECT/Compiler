@@ -1,9 +1,6 @@
 import client, { Connection, Channel, ConsumeMessage } from "amqplib";
 import { environment } from "../config/environment";
-import {
-  IResultProblem,
-  ISubmissionRequest,
-} from "../interfaces/submission.interface";
+import { ISubmissionRequest } from "../interfaces/submission.interface";
 import {
   ICompileRequest,
   languageType,

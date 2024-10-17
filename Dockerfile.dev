@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
 RUN git clone https://github.com/ioi/isolate.git && \
   cd isolate && \
   make install && \
+  ./isolate-cg-keeper \
   rm -rf /isolate
 
 WORKDIR /usr/src/app

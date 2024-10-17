@@ -13,6 +13,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     privileged: true
+    cgroupns: host
     depends_on:
       - rabbitmq
       - redis
