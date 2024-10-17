@@ -1,5 +1,8 @@
 export interface ITestCase {
-  input: string;
-  output: string;
-  isHidden: boolean;
+  message: string;
+  data: {
+    input: string;
+    output: string;
+    isHidden: boolean;
+  }[];
 }

@@ -55,7 +55,11 @@ const router = Router();
  *         description: Successfully added to queue
  */
 
-router.post("/submission", compilerController.addSubmissionToRabbitMQ);
+router.post(
+  "/submission",
+  authorization,
+  compilerController.addSubmissionToRabbitMQ,
+);
 
 /**
  * @openapi

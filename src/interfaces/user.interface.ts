@@ -18,4 +18,5 @@ export interface IUser {
     schoolId: string;
     schoolName: string;
   };
+  token?: string;
 }

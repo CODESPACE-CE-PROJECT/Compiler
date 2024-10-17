@@ -1,11 +1,8 @@
 #ignore env file
 .env
-
 #temp folder
 temp/
-
-terminal
 node_modules/
 /dist
-
 src/sample.ts
+yarn.lock

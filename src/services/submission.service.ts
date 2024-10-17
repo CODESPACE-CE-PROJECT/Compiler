@@ -2,7 +2,7 @@ import { ISubmission } from "../interfaces/submission.interface";
 import { api } from "./api.service";
 
 export const submissionService = {
-  submit: async (body: ISubmission, token: string) => {
+  submit: async (body: ISubmission, token: string | undefined) => {
     try {
       const response = await api.post("/submission", body, {
         headers: { Authorization: `Bearer ${token}` },

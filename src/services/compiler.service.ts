@@ -8,6 +8,8 @@ import {
   IMoveFile,
   languageType,
 } from "../interfaces/compiler.interface";
+import { IResultProblem } from "../interfaces/submission.interface";
+import { testCaseUtils } from "../utils/testcase.util";
 export const compilerService = {
   createFile: async (
     sourceCode: string,
@@ -133,5 +135,28 @@ export const compilerService = {
     } catch (error) {
       console.log(error);
     }
+  },
+
+  generateReusltProblem: async (
+    expectedOutputs: string[],
+    executionResults: ExecutionResult[],
+  ) => {
+    let result: IResultProblem[] = [];
+    let status: boolean = true;
+    executionResults.forEach((executionResult, index) => {
+      const expectedOutput = expectedOutputs[index];
+      const isPass = testCaseUtils.checkOutputEquality(
+        expectedOutput,
+        executionResult.result,
+      );
+      if (!isPass) {
+        status = false;
+      }
+      result.push({
+        output: executionResult.result,
+        isPass: isPass,
+      });
+    });
+    return { result, status };
   },
 };
