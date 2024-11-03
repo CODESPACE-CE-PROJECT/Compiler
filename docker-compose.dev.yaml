@@ -1,0 +1,59 @@
+---
+volumes:
+  rabbitmq-data:
+  rabbitmq-log:
+  redis-data:
+networks:
+  backend:
+    external: true
+services:
+  compiler:
+    container_name: compiler
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    privileged: true
+    depends_on:
+      - rabbitmq
+      - redis
+    develop:
+      watch:
+        - action: sync
+          path: ./
+          target: /usr/src/app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./pacage.json
+    environment:
+      NODE_ENV: development
+    command: ["npx", "nodemon", "--exec", "ts-node", "src/server.ts"]
+    ports:
+      - 3002:3002
+    restart: unless-stopped
+    networks:
+      - backend
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/
+      - rabbitmq-log:/var/log/rabbitmq
+    networks:
+      - backend
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/root/redis
+    networks:
+      - backend

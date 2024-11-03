@@ -1,27 +1,112 @@
+import { languageType } from "../interfaces/compiler.interface";
+import { ISubmissionRequest } from "../interfaces/submission.interface";
+import { ITestCase } from "../interfaces/testcase.interface";
+import { testCaseUtils } from "../utils/testcase.util";
 import { compilerService } from "./compiler.service";
 
 export const resultService = {
-  outputResult: async (sourceCode: string, language: string, input: string, filename: string) => {
+  outputResultWithTestCase: async (
+    submission: ISubmissionRequest,
+    testcases: ITestCase,
+  ) => {
     try {
-      if(language !== "java") {filename = `${process.pid}`}
-      const { result: createFileResult, filePath } = await compilerService.createFile(sourceCode, filename, language);
+      const {
+        result: createFileResult,
+        filePath,
+        file,
+      } = await compilerService.createFile(
+        submission.sourceCode,
+        submission.fileName,
+        submission.language,
+      );
       if (createFileResult !== "") {
         return { result: createFileResult };
       }
-      if (language === "c" || language === "cpp" || language === "java"){
-        const { result: compileFileResult, executablePath } = await compilerService.compileFile(filePath, language);
 
-        if (compileFileResult !== "") {
-          return { result: compileFileResult }
-        }
-        const result = await compilerService.Run(executablePath, language,input,filename);
-        return { result };
-     }else{
-        const result = await compilerService.Run(filePath, language ,input,filename);
-        return {result};
-     }
+      const boxId = process.pid % 1000;
+
+      const { result: moveFileResult, sanboxPath } =
+        await compilerService.moveFileToIsolate(filePath, boxId);
+      if (moveFileResult !== "") {
+        return { result: moveFileResult };
+      }
+
+      const { result: resultCompile } = await compilerService.compileFile(
+        sanboxPath,
+        submission.language,
+        file,
+      );
+      if (resultCompile) {
+        return { result: resultCompile };
+      }
+
+      const inputs = testCaseUtils.input(testcases);
+      const expectedOutputs = testCaseUtils.output(testcases);
+      if (inputs.length !== expectedOutputs.length) {
+        return { result: "TestCase Error" };
+      }
+      const executionResults = await Promise.all(
+        inputs.map(async (input: string) => {
+          return await compilerService.Run(
+            boxId,
+            submission.language,
+            sanboxPath,
+            input,
+            file,
+          );
+        }),
+      );
+      const resultProblem = await compilerService.generateReusltProblem(
+        expectedOutputs,
+        executionResults,
+      );
+      await compilerService.removeIsolateByBoxId(boxId);
+      return resultProblem;
     } catch (error) {
-      return { result: "error" }
+      console.log(error);
+      return { result: "error" };
     }
-  }
-}
+  },
+  outputResult: async (
+    sourceCode: string,
+    language: languageType,
+    input: string,
+    filename: string,
+  ) => {
+    try {
+      const {
+        result: createFileResult,
+        filePath,
+        file,
+      } = await compilerService.createFile(sourceCode, filename, language);
+      if (createFileResult !== "") {
+        return { result: createFileResult };
+      }
+      const boxId = process.pid % 1000;
+      const { result: moveFileResult, sanboxPath } =
+        await compilerService.moveFileToIsolate(filePath, boxId);
+      if (moveFileResult !== "") {
+        return { result: moveFileResult };
+      }
+      const { result: resultCompile } = await compilerService.compileFile(
+        sanboxPath,
+        language,
+        file,
+      );
+      if (resultCompile) {
+        return { result: resultCompile };
+      }
+      const { result: resultRun } = await compilerService.Run(
+        boxId,
+        language,
+        sanboxPath,
+        input,
+        file,
+      );
+      await compilerService.removeIsolateByBoxId(boxId);
+      return { result: resultRun };
+    } catch (error) {
+      return { result: error };
+    }
+  },
+};

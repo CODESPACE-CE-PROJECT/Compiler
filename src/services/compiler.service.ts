@@ -1,167 +1,162 @@
 import fs from "fs";
-import path from "path"
-import { execSync, execFile,spawnSync } from "child_process"
+import path from "path";
+import { execSync } from "child_process";
 import {
   ExecutionResult,
   ICompileFile,
   ICreateFile,
-} from "../interfaces/compiler.interface"
-
+  IMoveFile,
+  languageType,
+} from "../interfaces/compiler.interface";
+import { IResultProblem } from "../interfaces/submission.interface";
+import { testCaseUtils } from "../utils/testcase.util";
 export const compilerService = {
   createFile: async (
     sourceCode: string,
     fileName: string,
-    language: string,
+    language: languageType,
   ): Promise<ICreateFile> => {
     try {
-      if(language === "c"){
-        const folderPath = path.resolve(__dirname,"../../temp/c")
-        const filePath = path.resolve(folderPath, `${fileName}.c`)
-        if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
-      } else if(language === "cpp") {
-        const folderPath = path.resolve(__dirname,"../../temp/cpp")
-        const filePath = path.resolve(folderPath, `${fileName}.cpp`)
-        if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
-      } else if(language === "python"){
-        const folderPath = path.resolve(__dirname, "../../temp/python")
-        const filePath = path.resolve(folderPath, `${fileName}.py`)
-        if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
-      } else if(language === "java"){
-        const folderPath = path.resolve(__dirname, "../../temp/java")
-        const filePath = path.resolve(folderPath, `${fileName}.java`)
-        if (!fs.existsSync(folderPath)) {
-         fs.mkdirSync(folderPath, { recursive: true })
-        }
-
-        fs.writeFileSync(filePath, sourceCode);
-        return { result: "", filePath }
+      const folderName =
+        language === languageType.C
+          ? "c"
+          : language === languageType.CPP
+            ? "cpp"
+            : language === languageType.PYTHON
+              ? "python"
+              : language == languageType.JAVA
+                ? "java"
+                : "";
+      const languagetype =
+        language === languageType.C
+          ? "c"
+          : language === languageType.CPP
+            ? "cpp"
+            : language === languageType.PYTHON
+              ? "py"
+              : language == languageType.JAVA
+                ? "java"
+                : "";
+      const folderPath = path.resolve(__dirname, `../../temp/${folderName}`);
+      const filePath = path.resolve(folderPath, `${fileName}.${languagetype}`);
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
       }
-      return {result: "Error CreateFile", filePath:""} 
+      fs.writeFileSync(filePath, sourceCode);
+      return { result: "", filePath, file: `${fileName}.${languagetype}` };
     } catch (error) {
-      console.log(error)
-      return { result: "Error to create file", filePath: "" };
+      return { result: "Error to create file", filePath: "", file: "" };
     }
   },
-
-  compileFile: async (filePath: string, language: string): Promise<ICompileFile> => {
+  moveFileToIsolate: async (
+    filePath: string,
+    boxId: number,
+  ): Promise<IMoveFile> => {
     try {
-      const regex = /([^\\/:*?"<>|\r\n"]+).\w+$/;
-      const filenameMatch = filePath.match(regex);
-      const filename = filenameMatch ? language === "java" ? filenameMatch[0]:filenameMatch[1] : null;
-      console.log(filename) 
-      if (!filename) {
+      const sanboxPath = execSync(`isolate --init --box-id=${boxId}`);
+      execSync(`mv ${filePath} ${sanboxPath.toString().trim()}/box/`);
+      return { result: "", sanboxPath: `${sanboxPath.toString().trim()}/box` };
+    } catch (error) {
+      return { result: "Error Move File To isolate", sanboxPath: "" };
+    }
+  },
+  compileFile: async (
+    sanboxPath: string,
+    language: languageType,
+    file: string,
+  ): Promise<ICompileFile> => {
+    try {
+      const regex = /\w+/;
+      const filenameMatch = file.match(regex);
+      if (!filenameMatch) {
         throw new Error("INVALID_FILEPATH");
-      } 
-      var executablePath:string = "";
-      if (language === "cpp"){
-        const exeFolerPath = "./temp/exe-cpp";
-        if (!fs.existsSync(exeFolerPath)) {
-          fs.mkdirSync(exeFolerPath, { recursive: true });
-        }
-        executablePath = path.join(exeFolerPath, filename);
-        execSync(`g++ -w -std=c++14 ${filePath} -o ${executablePath}`);
-      }else if (language === "c"){
-        const exeFolerPath = "./temp/exe-c";
-        if (!fs.existsSync(exeFolerPath)) {
-          fs.mkdirSync(exeFolerPath, { recursive: true });
-        }
-        executablePath = path.join(exeFolerPath, filename);
-        execSync(`gcc -w -std=c++14 ${filePath} -o ${executablePath}`);
-      }else if (language === "java"){
-        const exeFolerPath = "./temp/exe-java";
-        if(!fs.existsSync(exeFolerPath)){
-          fs.mkdirSync(exeFolerPath, {recursive: true})
-        }
-        executablePath = path.join(exeFolerPath);
-        execSync(`javac  -d ${executablePath} ${filePath} `);
       }
-       return { result: "", executablePath: executablePath }; 
-   } catch (error) {
-      return { result: "Error to compile File", executablePath: "" }
+      const fullPath = path.join(sanboxPath, file);
+      if (language === languageType.C) {
+        execSync(
+          `gcc -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
+        );
+      } else if (language === languageType.CPP) {
+        execSync(
+          `g++ -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
+        );
+      } else if (language === languageType.JAVA) {
+        execSync(`javac -d ${sanboxPath}/${filenameMatch}.class ${fullPath}`);
+      }
+      return { result: "" };
+    } catch (error: any) {
+      const err = error.stdout.toString()
+        ? error.stdout.toString()
+        : error.stderr.toString();
+      return { result: err };
     }
   },
   Run: async (
-    executeablePath: string,
-    language: string,
+    boxId: number,
+    language: languageType,
+    sanboxPath: string,
     input: string,
-    filenam: string,
+    file: string,
   ): Promise<ExecutionResult> => {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, _reject) => {
       try {
-        const options = {
-          timeout: 1000,
-          maxBuffer: 1024 * 1024,
-        }
-        if(language === "c" || language === "cpp"){
-          const child = await execFile(
-            executeablePath,
-            options,
-            (error, stdout, stderr) => {
-                if (error) {
-                  resolve({
-                    result: "Error",
-                  });
-                } else {
-                  resolve({
-                    result: stdout,
-                  });
-                }
-            }
+        execSync(`echo ${input} > ${sanboxPath.toString().trim()}/input.txt`);
+        const filenameMatch = file.match(/\w+/);
+        let stdout: string = "";
+        if (language === languageType.C || language === languageType.CPP) {
+          stdout = execSync(
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run ${filenameMatch}`,
+            { encoding: "utf-8" },
           );
-          if (input !== "") {
-            child.stdin?.pipe(child.stdin);
-            child.stdin?.setDefaultEncoding("utf8");
-            child.stdin?.write(input);
-            child.stdin?.end();
-            child.stdin?.on("error", (error: Error) => {
-              if (error.message !== "write") {
-                resolve({ result: "ERROR" })
-              }
-            })
-          }
-        }else if(language === "java"){
-          const child = spawnSync(language,["-cp",executeablePath,filenam], {stdio:'pipe', input: input});
-          if(child.error){
-            resolve({
-              result: "Error"
-            })
-          }else{
-            resolve({   
-              result: child.output.toString()
-            })
-          }
-        }else if (language === "python"){
-          const child = spawnSync(language,[executeablePath], {stdio:'pipe', input: input});
-          if(child.error){
-            resolve({
-              result: "Error"
-            })
-          }else{
-            console.log(child.output.toString())
-            resolve({   
-              result: child.output.toString()
-            })
-          }
+        } else if (language === languageType.JAVA) {
+          stdout = execSync(
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/lib/jvm/java-17-openjdk-amd64/bin/java ${filenameMatch}`,
+            { encoding: "utf-8" },
+          );
+        } else if (language === languageType.PYTHON) {
+          stdout = execSync(
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/bin/python3 ${file}`,
+            { encoding: "utf-8" },
+          );
         }
-      } catch (error) {
-        console.log(error)
+        resolve({ result: stdout.toString() });
+      } catch (error: any) {
+        const err = error.stdout.toString()
+          ? error.stdout.toString()
+          : error.stderr.toString();
+        resolve({ result: err });
       }
-    })
-  }
-};
+    });
+  },
 
+  removeIsolateByBoxId: async (boxId: number) => {
+    try {
+      execSync(`isolate --box-id=${boxId} --cleanup`);
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
+  generateReusltProblem: async (
+    expectedOutputs: string[],
+    executionResults: ExecutionResult[],
+  ) => {
+    let result: IResultProblem[] = [];
+    let status: boolean = true;
+    executionResults.forEach((executionResult, index) => {
+      const expectedOutput = expectedOutputs[index];
+      const isPass = testCaseUtils.checkOutputEquality(
+        expectedOutput,
+        executionResult.result,
+      );
+      if (!isPass) {
+        status = false;
+      }
+      result.push({
+        output: executionResult.result,
+        isPass: isPass,
+      });
+    });
+    return { result, status };
+  },
+};

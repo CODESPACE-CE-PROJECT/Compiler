@@ -1,0 +1,45 @@
+FROM node:20.18.0-slim
+
+# Install required build dependencies for isolate
+RUN apt-get update && apt-get install -y \
+  libcap-dev \
+  asciidoc \
+  build-essential \
+  pkg-config \
+  libsystemd-dev \
+  git \
+  gcc \
+  g++ \
+  make \
+  openjdk-17-jdk \
+  libxml2-utils \
+  --no-install-recommends && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Clone and build isolate
+RUN git clone https://github.com/ioi/isolate.git && \
+  cd isolate && \
+  make install && \
+  # ./isolate-cg-keeper \
+  rm -rf /isolate
+
+WORKDIR /usr/src/app
+
+# Copy package files
+COPY --chown=node:node package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install
+
+# Install nodemon globally for hot reloading
+RUN yarn global add nodemon ts-node
+
+# Copy the rest of the app files
+COPY --chown=node:node . .
+
+# Set environment variables for hot reload
+ENV NODE_ENV=development
+
+# Expose the port
+EXPOSE 3002
+
