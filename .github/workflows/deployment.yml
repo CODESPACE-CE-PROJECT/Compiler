@@ -52,7 +52,7 @@ jobs:
             
             - name: Run Image ✅
               run: |
-                docker compose up -d
+                docker compose -f docker-compose.prod.yaml up -d
             
             - name: Message ✉️
               uses: fjogeleit/http-request-action@v1
