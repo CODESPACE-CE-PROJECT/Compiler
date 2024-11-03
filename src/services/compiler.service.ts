@@ -110,7 +110,7 @@ export const compilerService = {
           );
         } else if (language === languageType.JAVA) {
           stdout = execSync(
-            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/bin/java ${filenameMatch}`,
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/lib/jvm/java-17-openjdk-amd64/bin/java ${filenameMatch}`,
             { encoding: "utf-8" },
           );
         } else if (language === languageType.PYTHON) {

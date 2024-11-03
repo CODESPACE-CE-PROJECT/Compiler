@@ -1,4 +1,6 @@
----
+networks:
+  backend:
+      external: true
 services:
   compiler:
     container_name: compiler
@@ -6,7 +8,21 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      PORT: 3002
-      DOCKER_HOST: 10.10.10.246
+      PORT: ${PORT}
+      RMQUSER: ${RMQUSER}
+      RMQPASS: ${RMQPASS}
+      RMQHOST: ${RMQHOST} 
+      RMQNAME: ${RMQNAME}  
+      BACKEND_URL: ${BACKEND_URL} 
+      JWT_SECRET: ${JWT_SECRET} 
     restart: unless-stopped
-    network_mode: "host"
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.compiler-api.loadbalancer.server.port: "3003"
+      traefik.http.services.compiler-api.loadbalancer.server.scheme: "http"
+      traefik.http.routers.compiler-api-https.entrypoints: "websecure"
+      traefik.http.routers.compiler-api-https.rule: "Host(`codespace-compiler.srv-demo-2.home.unixvextor.com`)"
+      traefik.http.routers.compiler-api-https.tls: "true"
+      traefik.http.routers.compiler-api-https.tls.certresolver: "cloudflare"
+    networks: 
+      - backend

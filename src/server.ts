@@ -48,6 +48,7 @@ if (cluster.isPrimary) {
   }
   cluster.on("exit", (worker, _code, _signal) => {
     logger.info(`Worker ${worker.process.pid} died`);
+    cluster.fork();
   });
 } else {
   app.listen(environment.PORT, "0.0.0.0", () => {

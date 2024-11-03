@@ -26,7 +26,24 @@ jobs:
         steps:
             - name: Clone Repo 🤖
               uses: actions/checkout@v3
-       
+            - name: Set Environment Variables 🔠
+              env:
+                PORT: ${{ secrets.PORT }}
+                RMQUSER: ${{ secrets.RMQUSER }}
+                RMQPASS: ${{ secrets.RMQPASS }}
+                RMQHOST: ${{ secrets.RMQHOST }} 
+                RMQNAME: ${{ secrets.RMQNAME }}  
+                BACKEND_URL: ${{ secrets.BACKEND_URL }} 
+                JWT_SECRET: ${{ secrets.JWT_SECRET }}
+              run: |
+                echo "PORT=$PORT" >> .env
+                echo "JWT_SECRET=$JWT_SECRET" >> .env
+                echo "RMQUSER=$RMQUSER" >> .env
+                echo "RMQPASS=$RMQPASS" >> .env
+                echo "RMQHOST=$RMQHOST" >> .env
+                echo "RMQNAME=$RMQNAME" >> .env
+                echo "BACKEND_URL=$BACKEND_URL" >> .env
+
             - name: Clear Cache 🫧
               run: |
                 docker stop compiler || true
@@ -44,4 +61,4 @@ jobs:
                 url: ${{ secrets.DISCORD_WEBHOOK }} 
                 method: 'POST'
                 customHeaders: '{"Content-Type": "application/json"}'
-                data: '{"content": "CEPP Backend Build ✅","embeds": [{"title": "Backend url","description": "https://compiler-api.unixvextor.com"}]}'
+                data: '{"content": "CE PROJECT Compiler Build ✅","embeds": [{"title": "Backend url","description": "codespace-compiler.srv-demo-2.home.unixvextor.com"}]}'
