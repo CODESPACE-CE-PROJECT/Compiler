@@ -6,7 +6,8 @@ services:
     container_name: compiler
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile 
+    privileged: true
     environment:
       PORT: ${PORT}
       RMQUSER: ${RMQUSER}
