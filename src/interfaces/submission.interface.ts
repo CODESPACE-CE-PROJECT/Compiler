@@ -22,3 +22,18 @@ export interface ISubmission {
   }[];
   status: boolean;
 }
+
+export interface IResultSubmission {
+  submissionId: string;
+  problemId: string;
+  username: string;
+  sourceCode: string;
+  no: number;
+  results: {
+    output: string;
+    isPass: boolean;
+  }[];
+  status: boolean;
+  createAt: Date;
+}
+

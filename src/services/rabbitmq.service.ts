@@ -1,6 +1,6 @@
 import client, { Connection, Channel, ConsumeMessage } from "amqplib";
 import { environment } from "../config/environment";
-import { ISubmissionRequest } from "../interfaces/submission.interface";
+import { IResultSubmission, ISubmission, ISubmissionRequest } from "../interfaces/submission.interface";
 import {
   ICompileRequest,
   languageType,
@@ -10,6 +10,7 @@ import { resultService } from "./result.service";
 import { problemService } from "./problem.service";
 import { ITestCase } from "../interfaces/testcase.interface";
 import { submissionService } from "./submission.service";
+import { checkRedisHealth, redisClient } from "./redis.service";
 export const rabbitMQService = {
   sendDataToQueue: async (queueName: string, data: any) => {
     const connection: Connection = await client.connect(
@@ -31,6 +32,10 @@ export const rabbitMQService = {
     const connection: Connection = await client.connect(
       `amqp://${environment.RMQUSER}:${environment.RMQPASS}@${environment.RMQHOST}:5672`,
     );
+    await redisClient.connect()
+    if (await checkRedisHealth()) {
+      console.log("Redis Connected")
+    }
     const channel: Channel = await connection.createChannel();
     await channel.assertQueue("compiler", { durable: true });
     await channel.assertQueue("submission", { durable: true });
@@ -58,7 +63,7 @@ export const rabbitMQService = {
           testcases,
         );
         if ("status" in resultProblem) {
-          const resultSubmit = await submissionService.submit(
+          const resultSubmit: IResultSubmission = await submissionService.submit(
             {
               problemId: submission.problemId,
               sourceCode: submission.sourceCode,
@@ -67,6 +72,7 @@ export const rabbitMQService = {
             },
             submission.token,
           );
+          redisClient.set(`submission-${resultSubmit.username}`, JSON.stringify({ submissionId: resultSubmit.submissionId }))
           console.log(resultSubmit);
         } else {
           throw new Error("Error To Submission File: " + resultProblem.result);
@@ -96,6 +102,7 @@ export const rabbitMQService = {
           updateFileName,
         );
         console.log(outputResult);
+        await redisClient.set(`compiler-${data.username}`, JSON.stringify(outputResult))
         channel.ack(msg);
       } catch (error) {
         throw new Error("Error receiveData");

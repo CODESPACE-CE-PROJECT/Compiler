@@ -15,7 +15,7 @@ export interface ICompileRequest {
   language: languageType;
   fileName: string;
   input: string;
-  token?: string;
+  username?: string;
 }
 
 export interface IMoveFile {

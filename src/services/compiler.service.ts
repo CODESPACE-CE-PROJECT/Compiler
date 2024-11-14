@@ -81,7 +81,7 @@ export const compilerService = {
           `g++ -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
         );
       } else if (language === languageType.JAVA) {
-        execSync(`javac -d ${sanboxPath}/${filenameMatch}.class ${fullPath}`);
+        execSync(`javac -d ${sanboxPath} ${fullPath}`);
       }
       return { result: "" };
     } catch (error: any) {
@@ -108,12 +108,14 @@ export const compilerService = {
             `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run ${filenameMatch}`,
             { encoding: "utf-8" },
           );
-        } else if (language === languageType.JAVA) {
+        }
+        else if (language === languageType.JAVA) {
           stdout = execSync(
-            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/lib/jvm/java-17-openjdk-amd64/bin/java ${filenameMatch}`,
+            `isolate --box-id=${boxId} --silent --stderr-to-stdout -p --stdin=input.txt --run /usr/lib/jvm/java-17-openjdk-amd64/bin/java ${filenameMatch}`,
             { encoding: "utf-8" },
           );
-        } else if (language === languageType.PYTHON) {
+        }
+        else if (language === languageType.PYTHON) {
           stdout = execSync(
             `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/bin/python3 ${file}`,
             { encoding: "utf-8" },

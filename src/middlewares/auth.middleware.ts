@@ -26,12 +26,10 @@ export const authorization = async (
       return res.status(401).json({ message: "UNAUTHORIZED" });
     }
     const user: IUser | null = await userService.profile(token);
-
-    if (!user) {
+    if (!user?.data) {
       return res.status(401).json({ message: "UNAUTHORIZED" });
     }
-
-    (req as RequestWithUser).user = { ...user, token };
+    (req as RequestWithUser).user = { ...user.data, token };
     next();
   } catch (error) {
     return res.status(401).json({ message: "UNAUTHORIZED" });

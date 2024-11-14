@@ -25,7 +25,7 @@ export const compilerController = {
         message: "Missing Required Fields",
       });
     }
-    data.token = (req as RequestWithUser).user.token;
+    data.username = (req as RequestWithUser).user.username;
     await rabbitMQService.sendDataToQueue("compiler", data);
     return res.status(200).json({
       message: "Add To Queue Successfully",
