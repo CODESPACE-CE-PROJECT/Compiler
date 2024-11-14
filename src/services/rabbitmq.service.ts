@@ -1,6 +1,6 @@
 import client, { Connection, Channel, ConsumeMessage } from "amqplib";
 import { environment } from "../config/environment";
-import { IResultSubmission, ISubmission, ISubmissionRequest } from "../interfaces/submission.interface";
+import { IResultSubmission, ISubmissionRequest } from "../interfaces/submission.interface";
 import {
   ICompileRequest,
   languageType,
@@ -72,7 +72,7 @@ export const rabbitMQService = {
             },
             submission.token,
           );
-          redisClient.set(`submission-${resultSubmit.username}`, JSON.stringify({ submissionId: resultSubmit.submissionId }))
+          redisClient.set(`submission-${resultSubmit.username}`, JSON.stringify({ submissionId: resultSubmit.submissionId }), { EX: 240 })
           console.log(resultSubmit);
         } else {
           throw new Error("Error To Submission File: " + resultProblem.result);
@@ -102,7 +102,7 @@ export const rabbitMQService = {
           updateFileName,
         );
         console.log(outputResult);
-        await redisClient.set(`compiler-${data.username}`, JSON.stringify(outputResult))
+        await redisClient.set(`compiler-${data.username}`, JSON.stringify(outputResult), { EX: 240 })
         channel.ack(msg);
       } catch (error) {
         throw new Error("Error receiveData");
