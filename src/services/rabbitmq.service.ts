@@ -10,7 +10,7 @@ import { resultService } from "./result.service";
 import { problemService } from "./problem.service";
 import { ITestCase } from "../interfaces/testcase.interface";
 import { submissionService } from "./submission.service";
-import { checkRedisHealth, redisClient } from "./redis.service";
+import { checkRedisHealth, publicTopic, redisClient } from "./redis.service";
 export const rabbitMQService = {
   sendDataToQueue: async (queueName: string, data: any) => {
     const connection: Connection = await client.connect(
@@ -68,12 +68,17 @@ export const rabbitMQService = {
               problemId: submission.problemId,
               sourceCode: submission.sourceCode,
               results: resultProblem.result,
-              status: resultProblem.status,
+              stateSubmission: resultProblem.status ? "PASS" : "FAILED",
             },
             submission.token,
           );
-          redisClient.set(`submission-${resultSubmit.username}`, JSON.stringify({ submissionId: resultSubmit.submissionId }), { EX: 240 })
-          console.log(resultSubmit);
+
+          redisClient.set(`submission-${resultSubmit.data.username}`, JSON.stringify({ submissionId: resultSubmit.data.submissionId }), { EX: 240 })
+
+          redisClient.set(`submissionState-${submission.username}`, "false", { EX: 240 })
+
+          publicTopic('submission', JSON.stringify({ submissionId: resultSubmit.data.submissionId, username: resultSubmit.data.username }))
+
         } else {
           throw new Error("Error To Submission File: " + resultProblem.result);
         }
@@ -82,6 +87,7 @@ export const rabbitMQService = {
         throw new Error("Error receiveData");
       }
     });
+
     channel.consume("compiler", async (msg: ConsumeMessage | null) => {
       try {
         if (!msg) {
@@ -101,10 +107,14 @@ export const rabbitMQService = {
           data.input,
           updateFileName,
         );
-        console.log(outputResult);
+
         await redisClient.set(`compiler-${data.username}`, JSON.stringify(outputResult), { EX: 240 })
+        const updateOutputResult = { ...outputResult, username: data.username }
+        publicTopic('compiler', JSON.stringify(updateOutputResult))
+
         channel.ack(msg);
       } catch (error) {
+        console.log(error)
         throw new Error("Error receiveData");
       }
     });

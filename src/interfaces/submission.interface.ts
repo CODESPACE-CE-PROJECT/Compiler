@@ -6,6 +6,7 @@ export interface ISubmissionRequest {
   language: languageType;
   fileName: string;
   token?: string;
+  username?: string
 }
 
 export interface IResultProblem {
@@ -20,20 +21,23 @@ export interface ISubmission {
     output: string;
     isPass: boolean;
   }[];
-  status: boolean;
+  stateSubmission: string;
 }
 
 export interface IResultSubmission {
-  submissionId: string;
-  problemId: string;
-  username: string;
-  sourceCode: string;
-  no: number;
-  results: {
-    output: string;
-    isPass: boolean;
-  }[];
-  status: boolean;
-  createAt: Date;
+  message: string;
+  data: {
+    submissionId: string;
+    problemId: string;
+    username: string;
+    sourceCode: string;
+    no: number;
+    results: {
+      output: string;
+      isPass: boolean;
+    }[];
+    stateSubmission: boolean;
+    createAt: Date;
+  }
 }
 

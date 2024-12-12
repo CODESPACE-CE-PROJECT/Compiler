@@ -15,3 +15,15 @@ export const checkRedisHealth = async (): Promise<boolean> => {
     return false;
   }
 };
+
+export const publicTopic = async (topic: string, message: string) => {
+  try {
+    const subscriber = redisClient.duplicate()
+    await subscriber.connect()
+    await subscriber.publish(topic, message)
+  } catch (error) {
+    throw new Error("Error Public Topic Redis")
+  }
+}
+
+

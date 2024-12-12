@@ -3,6 +3,7 @@ import { ISubmissionRequest } from "../interfaces/submission.interface";
 import { ICompileRequest } from "../interfaces/compiler.interface";
 import { rabbitMQService } from "../services/rabbitmq.service";
 import { RequestWithUser } from "../interfaces/auth.interface";
+import { redisClient } from "../services/redis.service";
 
 export const compilerController = {
   addSubmissionToRabbitMQ: async (req: Request, res: Response) => {
@@ -13,7 +14,11 @@ export const compilerController = {
       });
     }
     submission.token = (req as RequestWithUser).user.token;
+    submission.username = (req as RequestWithUser).user.username
     await rabbitMQService.sendDataToQueue("submission", submission);
+
+    redisClient.set(`submissionState-${submission.username}`, "true", { EX: 240 })
+
     return res.status(200).json({
       message: "Add To Queue Successfully",
     });
