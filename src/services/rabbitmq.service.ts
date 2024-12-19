@@ -11,6 +11,8 @@ import { problemService } from "./problem.service";
 import { ITestCase } from "../interfaces/testcase.interface";
 import { submissionService } from "./submission.service";
 import { checkRedisHealth, publicTopic, redisClient } from "./redis.service";
+import logger from '../utils/logger.util'
+
 export const rabbitMQService = {
   sendDataToQueue: async (queueName: string, data: any) => {
     const connection: Connection = await client.connect(
@@ -34,7 +36,7 @@ export const rabbitMQService = {
     );
     await redisClient.connect()
     if (await checkRedisHealth()) {
-      console.log("Redis Connected")
+      logger.info("Redis Connected")
     }
     const channel: Channel = await connection.createChannel();
     await channel.assertQueue("compiler", { durable: true });

@@ -9,11 +9,11 @@ services:
       dockerfile: Dockerfile 
     privileged: true
     environment:
-      PORT: ${PORT}
+      PORT: 30003
       RMQUSER: ${RMQUSER}
       RMQPASS: ${RMQPASS}
       RMQHOST: ${RMQHOST} 
-      RMQNAME: ${RMQNAME}  
+      REDISHOST: ${REDISHOST}
       BACKEND_URL: ${BACKEND_URL} 
       JWT_SECRET: ${JWT_SECRET} 
     restart: unless-stopped
