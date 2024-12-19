@@ -6,6 +6,5 @@ node_modules/
 .gitignore
 dist/
 logs/
-ear
 .env.example
 .github

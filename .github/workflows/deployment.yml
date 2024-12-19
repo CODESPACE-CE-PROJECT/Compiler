@@ -28,20 +28,19 @@ jobs:
               uses: actions/checkout@v3
             - name: Set Environment Variables 🔠
               env:
-                PORT: ${{ secrets.PORT }}
                 RMQUSER: ${{ secrets.RMQUSER }}
                 RMQPASS: ${{ secrets.RMQPASS }}
                 RMQHOST: ${{ secrets.RMQHOST }} 
-                RMQNAME: ${{ secrets.RMQNAME }}  
+                REDISHOST: ${{ secrets.REDISHOST }}
                 BACKEND_URL: ${{ secrets.BACKEND_URL }} 
                 JWT_SECRET: ${{ secrets.JWT_SECRET }}
               run: |
-                echo "PORT=$PORT" >> .env
                 echo "JWT_SECRET=$JWT_SECRET" >> .env
                 echo "RMQUSER=$RMQUSER" >> .env
                 echo "RMQPASS=$RMQPASS" >> .env
                 echo "RMQHOST=$RMQHOST" >> .env
                 echo "RMQNAME=$RMQNAME" >> .env
+                echo "REDISHOST=$REDISHOST" >> .env
                 echo "BACKEND_URL=$BACKEND_URL" >> .env
 
             - name: Clear Cache 🫧

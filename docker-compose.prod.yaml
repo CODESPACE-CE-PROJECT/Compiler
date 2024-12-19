@@ -6,13 +6,14 @@ services:
     container_name: compiler
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile 
+    privileged: true
     environment:
-      PORT: ${PORT}
+      PORT: 3003
       RMQUSER: ${RMQUSER}
       RMQPASS: ${RMQPASS}
       RMQHOST: ${RMQHOST} 
-      RMQNAME: ${RMQNAME}  
+      REDISHOST: ${REDISHOST}
       BACKEND_URL: ${BACKEND_URL} 
       JWT_SECRET: ${JWT_SECRET} 
     restart: unless-stopped

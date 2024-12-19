@@ -5,7 +5,7 @@ export const environmentSchema = z.object({
   RMQUSER: z.string(),
   RMQPASS: z.string(),
   RMQHOST: z.string(),
-  RMQNAME: z.string(),
+  REDISHOST: z.string(),
   BACKEND_URL: z.string(),
   JWT_SECRET: z.string(),
 });

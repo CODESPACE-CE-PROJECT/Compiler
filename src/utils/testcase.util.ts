@@ -2,9 +2,9 @@ import { ITestCase } from "../interfaces/testcase.interface";
 
 export const testCaseUtils = {
   input: (testcases: ITestCase): string[] =>
-    testcases.data.map((testcase) => testcase.input),
+    testcases.data.testCases.map((testcase) => testcase.input),
   output: (testcases: ITestCase): string[] =>
-    testcases.data.map((testcase) => testcase.output),
+    testcases.data.testCases.map((testcase) => testcase.output),
   checkOutputEquality: (
     expectedOutput: string,
     executionResult: string,

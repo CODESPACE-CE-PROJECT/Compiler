@@ -4,7 +4,6 @@ import { config } from "dotenv";
 import os from "os";
 import helmet from "helmet";
 import cluster from "cluster";
-import swaggerDocs from "./utils/swagger.util";
 import logger from "./utils/logger.util";
 import { rabbitMQService } from "./services/rabbitmq.service";
 // Router
@@ -55,7 +54,6 @@ if (cluster.isPrimary) {
     logger.info(
       `Server ready on port ${environment.PORT} worker pid: ${process.pid}`,
     );
-    swaggerDocs(app);
     rabbitMQService.receiveData();
   });
 }
