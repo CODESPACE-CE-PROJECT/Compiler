@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile 
     privileged: true
     environment:
-      PORT: 30003
+      PORT: 3003
       RMQUSER: ${RMQUSER}
       RMQPASS: ${RMQPASS}
       RMQHOST: ${RMQHOST} 
