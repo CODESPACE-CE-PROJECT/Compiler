@@ -60,4 +60,4 @@ jobs:
                 url: ${{ secrets.DISCORD_WEBHOOK }} 
                 method: 'POST'
                 customHeaders: '{"Content-Type": "application/json"}'
-                data: '{"content": "CE PROJECT Compiler Build ✅","embeds": [{"title": "Backend url","description": "codespace-compiler.srv-demo-2.home.unixvextor.com"}]}'
+                data: '{"content": "CE PROJECT Compiler Build ✅","embeds": [{"title": "Compiler URL","description": "https://codespace-compiler.srv-demo-2.home.unixvextor.com"}]}'
