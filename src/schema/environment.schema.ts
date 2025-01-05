@@ -8,4 +8,5 @@ export const environmentSchema = z.object({
   REDISHOST: z.string(),
   BACKEND_URL: z.string(),
   JWT_SECRET: z.string(),
+  LEARNIFY_TOKEN_API: z.string()
 });
