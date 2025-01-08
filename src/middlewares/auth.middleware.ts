@@ -35,3 +35,18 @@ export const authorization = async (
     return res.status(401).json({ message: "UNAUTHORIZED" });
   }
 };
+
+export const authorizationAPIKey = async (req: Request, res: Response, next: NextFunction) => {
+  const token: string | undefined = req.header('x-api-key')
+  if (!token) {
+    return res.status(401).json({ message: "Invalid API Key" });
+  }
+  try {
+    if (token !== environment.LEARNIFY_TOKEN_API) {
+      return res.status(401).json({ message: "Invalid API Key" });
+    }
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid API Key" });
+  }
+} 

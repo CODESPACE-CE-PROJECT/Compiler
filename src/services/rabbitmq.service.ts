@@ -1,6 +1,6 @@
 import client, { Connection, Channel, ConsumeMessage } from "amqplib";
 import { environment } from "../config/environment";
-import { IResultSubmission, ISubmissionRequest } from "../interfaces/submission.interface";
+import { IResultSubmission, ISubmissionLearnify, ISubmissionRequest } from "../interfaces/submission.interface";
 import {
   ICompileRequest,
   languageType,
@@ -41,6 +41,8 @@ export const rabbitMQService = {
     const channel: Channel = await connection.createChannel();
     await channel.assertQueue("compiler", { durable: true });
     await channel.assertQueue("submission", { durable: true });
+    await channel.assertQueue("learnify-submission", { durable: true })
+
     channel.consume("submission", async (msg: ConsumeMessage | null) => {
       try {
         if (!msg) {
@@ -86,6 +88,7 @@ export const rabbitMQService = {
         }
         channel.ack(msg);
       } catch (error) {
+        console.log(error)
         throw new Error("Error receiveData");
       }
     });
@@ -120,5 +123,34 @@ export const rabbitMQService = {
         throw new Error("Error receiveData");
       }
     });
+
+    channel.consume("learnify-submission", async (msg: ConsumeMessage | null) => {
+      try {
+        if (!msg) {
+          throw new Error("Invalid Incoming Message");
+        }
+        const submission: ISubmissionLearnify = JSON.parse(
+          msg?.content.toString() as string,
+        );
+        const updateSourceCode = strip(submission.sourceCode);
+        const updateFileName =
+          submission.language === languageType.JAVA
+            ? submission.fileName
+            : `${process.pid}`;
+        submission.sourceCode = updateSourceCode;
+        submission.fileName = updateFileName;
+        const resultProblem = await resultService.outputResultWithTestCaseLeanify(submission)
+        console.log(resultProblem)
+        if ("status" in resultProblem) {
+          // save to learnify database
+        } else {
+          throw new Error("Error To Submission File: " + resultProblem.result);
+        }
+        channel.ack(msg);
+      } catch (error) {
+        throw new Error("Error receiveData");
+      }
+    });
+
   },
 };

@@ -22,7 +22,7 @@ app.use(cors());
 
 // API Route
 app.use("/", serverRouter);
-app.use("/compiler", compilerRouter);
+app.use("/", compilerRouter);
 
 const errorHandler = async (
   err: any,

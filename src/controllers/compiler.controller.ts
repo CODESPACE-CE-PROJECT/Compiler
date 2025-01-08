@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ISubmissionRequest } from "../interfaces/submission.interface";
+import { ISubmissionLearnify, ISubmissionRequest } from "../interfaces/submission.interface";
 import { ICompileRequest } from "../interfaces/compiler.interface";
 import { rabbitMQService } from "../services/rabbitmq.service";
 import { RequestWithUser } from "../interfaces/auth.interface";
@@ -36,4 +36,12 @@ export const compilerController = {
       message: "Add To Queue Successfully",
     });
   },
+  compilerCodeLearnify: async (req: Request, res: Response) => {
+    const data: ISubmissionLearnify = req.body
+    // check valid user in learnify database
+    await rabbitMQService.sendDataToQueue("learnify-submission", data)
+    return res.status(200).json({
+      message: "Add To Queue Successfully",
+    })
+  }
 };

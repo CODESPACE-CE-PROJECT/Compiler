@@ -41,3 +41,13 @@ export interface IResultSubmission {
   }
 }
 
+export interface ISubmissionLearnify {
+  userId: string,
+  sourceCode: string,
+  fileName: string,
+  testCases: {
+    input: string,
+    expectedOutput: string,
+  }[],
+  language: languageType
+}
