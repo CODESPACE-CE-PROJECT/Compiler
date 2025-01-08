@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs, { readFileSync, writeFileSync } from "fs";
 import path from "path";
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
 import {
   ExecutionResult,
   ICompileFile,
@@ -48,49 +48,70 @@ export const compilerService = {
       return { result: "Error to create file", filePath: "", file: "" };
     }
   },
-  moveFileToIsolate: async (
-    filePath: string,
-    boxId: number,
-  ): Promise<IMoveFile> => {
-    try {
-      const sanboxPath = execSync(`isolate --init --box-id=${boxId}`);
-      execSync(`mv ${filePath} ${sanboxPath.toString().trim()}/box/`);
-      return { result: "", sanboxPath: `${sanboxPath.toString().trim()}/box` };
-    } catch (error) {
-      return { result: "Error Move File To isolate", sanboxPath: "" };
-    }
-  },
   compileFile: async (
-    sanboxPath: string,
+    filePath: string,
     language: languageType,
     file: string,
   ): Promise<ICompileFile> => {
     try {
       const regex = /\w+/;
       const filenameMatch = file.match(regex);
+      let execFolder = ''
+      let exeFile = ''
       if (!filenameMatch) {
         throw new Error("INVALID_FILEPATH");
       }
-      const fullPath = path.join(sanboxPath, file);
+      const folderPath = path.resolve(__dirname, `../../temp`);
       if (language === languageType.C) {
+        execFolder = path.resolve(folderPath, 'exe-c')
+        exeFile = `${execFolder}/${filenameMatch}`
+        if (!fs.existsSync(execFolder)) {
+          fs.mkdirSync(execFolder, { recursive: true });
+        }
         execSync(
-          `gcc -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
+          `gcc -w -std=c++14 ${filePath} -o ${exeFile}`,
         );
       } else if (language === languageType.CPP) {
+        execFolder = path.resolve(folderPath, 'exe-cpp')
+        exeFile = `${execFolder}/${filenameMatch}`
+        if (!fs.existsSync(execFolder)) {
+          fs.mkdirSync(execFolder, { recursive: true });
+        }
         execSync(
-          `g++ -w -std=c++14 ${fullPath} -o ${sanboxPath}/${filenameMatch}`,
+          `g++ -w -std=c++14 ${filePath} -o ${exeFile}`,
         );
       } else if (language === languageType.JAVA) {
-        execSync(`javac -d ${sanboxPath} ${fullPath}`);
+        execFolder = path.resolve(folderPath, 'exe-java')
+        exeFile = `${execFolder}/${filenameMatch}.class`
+        if (!fs.existsSync(execFolder)) {
+          fs.mkdirSync(execFolder, { recursive: true });
+        }
+        execSync(`javac -d ${execFolder} ${filePath}`);
+      } else if (language === languageType.PYTHON) {
+        exeFile = `${filePath}`
       }
-      return { result: "" };
+      return { result: "", exeFile: exeFile };
     } catch (error: any) {
       const err = error.stdout.toString()
         ? error.stdout.toString()
         : error.stderr.toString();
-      return { result: err };
+      return { result: err, exeFile: "" };
     }
   },
+
+  moveFileToIsolate: async (
+    exefilePath: string,
+    boxId: number,
+  ): Promise<IMoveFile> => {
+    try {
+      const sanboxPath = execSync(`isolate --init --box-id=${boxId}`);
+      execSync(`cp ${exefilePath} ${sanboxPath.toString().trim()}/box/`);
+      return { result: "", sanboxPath: `${sanboxPath.toString().trim()}/box` };
+    } catch (error) {
+      return { result: "Error Move File To isolate", sanboxPath: "" };
+    }
+  },
+
   Run: async (
     boxId: number,
     language: languageType,
@@ -99,34 +120,45 @@ export const compilerService = {
     file: string,
   ): Promise<ExecutionResult> => {
     return new Promise(async (resolve, _reject) => {
+      const inputFile = `${sanboxPath.toString().trim()}/input.txt`
+      const outputFile = `${sanboxPath.toString().trim()}/output.txt`
+      const metaFile = `${sanboxPath.toString().trim()}/meta.txt`
+      writeFileSync(inputFile, input)
+      writeFileSync(outputFile, '')
+      writeFileSync(metaFile, '')
       try {
-        execSync(`echo ${input} > ${sanboxPath.toString().trim()}/input.txt`);
         const filenameMatch = file.match(/\w+/);
-        let stdout: string = "";
+        let command = '';
         if (language === languageType.C || language === languageType.CPP) {
-          stdout = execSync(
-            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run ${filenameMatch}`,
-            { encoding: "utf-8" },
-          );
+          command = `isolate --box-id=${boxId} --time=5 --wall-time=5 --stderr-to-stdout --stdin=input.txt --stdout=output.txt --meta=${metaFile} --silent --run ${filenameMatch}`;
+        } else if (language === languageType.JAVA) {
+          command = `isolate --box-id=${boxId} --time=5 --wall-time=5 --stderr-to-stdout --stdin=input.txt --stdout=output.txt --meta=${metaFile} --silent --run /usr/lib/jvm/java-17-openjdk-amd64/bin/java ${filenameMatch}`;
+        } else if (language === languageType.PYTHON) {
+          command = `isolate --box-id=${boxId} --time=5 --wall-time=5 --stderr-to-stdout --stdin=input.txt --stdout=output.txt --meta=${metaFile} --silent --run /usr/bin/python3 ${file}`;
         }
-        else if (language === languageType.JAVA) {
-          stdout = execSync(
-            `isolate --box-id=${boxId} --silent --stderr-to-stdout -p --stdin=input.txt --run /usr/lib/jvm/java-17-openjdk-amd64/bin/java ${filenameMatch}`,
-            { encoding: "utf-8" },
-          );
-        }
-        else if (language === languageType.PYTHON) {
-          stdout = execSync(
-            `isolate --box-id=${boxId} --silent --stderr-to-stdout --stdin=input.txt --run /usr/bin/python3 ${file}`,
-            { encoding: "utf-8" },
-          );
-        }
-        resolve({ result: stdout.toString() });
-      } catch (error: any) {
-        const err = error.stdout.toString()
-          ? error.stdout.toString()
-          : error.stderr.toString();
-        resolve({ result: err });
+        const childProcess = spawn(command, { shell: true });
+
+        // Handle process exit
+        childProcess.on('exit', () => {
+          const metaContent = readFileSync(metaFile, 'utf-8');
+          const output = readFileSync(outputFile, 'utf-8');
+
+          const lines = metaContent.split('\n');
+          const status = lines.find((line) => line.startsWith('status:'))?.split(':')[1]?.trim() || '';
+          const exitCode = lines.find((line) => line.startsWith('exitCode:'))?.split(':')[1]?.trim() || '';
+
+          if (status === 'TO') {
+            resolve({ result: 'Execution Time Out' });
+          } else if (exitCode !== '0') {
+            resolve({ result: output });
+          } else {
+            resolve({ result: output });
+          }
+
+        });
+
+      } catch (error) {
+        resolve({ result: 'error execute' });
       }
     });
   },

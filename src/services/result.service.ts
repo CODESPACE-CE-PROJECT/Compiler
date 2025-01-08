@@ -4,6 +4,21 @@ import { ITestCase } from "../interfaces/testcase.interface";
 import { testCaseUtils } from "../utils/testcase.util";
 import { compilerService } from "./compiler.service";
 
+const generatedBoxIds = new Set<number>();
+
+const generateUniqueBoxId = (): number => {
+  let boxId = process.pid % 1000;
+
+  while (generatedBoxIds.has(boxId)) {
+    boxId = (boxId + 1) % 1000;
+  }
+
+  generatedBoxIds.add(boxId);
+
+  return boxId;
+};
+
+
 export const resultService = {
   outputResultWithTestCase: async (
     submission: ISubmissionRequest,
@@ -23,22 +38,11 @@ export const resultService = {
         return { result: createFileResult };
       }
 
-      const boxId = process.pid % 1000;
-
-      const { result: moveFileResult, sanboxPath } =
-        await compilerService.moveFileToIsolate(filePath, boxId);
-      if (moveFileResult !== "") {
-        return { result: moveFileResult };
-      }
-
-      const { result: resultCompile } = await compilerService.compileFile(
-        sanboxPath,
+      const { result: resultCompile, exeFile } = await compilerService.compileFile(
+        filePath,
         submission.language,
         file,
       );
-      if (resultCompile) {
-        return { result: resultCompile };
-      }
 
       const inputs = testCaseUtils.input(testcases);
       const expectedOutputs = testCaseUtils.output(testcases);
@@ -47,20 +51,34 @@ export const resultService = {
       }
       const executionResults = await Promise.all(
         inputs.map(async (input: string) => {
-          return await compilerService.Run(
+          const boxId = generateUniqueBoxId();
+
+          const { result: moveFileResult, sanboxPath } =
+            await compilerService.moveFileToIsolate(exeFile, boxId);
+          if (moveFileResult !== "") {
+            return { result: moveFileResult };
+          }
+
+          if (resultCompile) {
+            return { result: resultCompile };
+          }
+
+          const result = await compilerService.Run(
             boxId,
             submission.language,
             sanboxPath,
             input,
             file,
           );
+
+          await compilerService.removeIsolateByBoxId(boxId);
+          return result
         }),
       );
       const resultProblem = await compilerService.generateReusltProblem(
         expectedOutputs,
         executionResults,
       );
-      await compilerService.removeIsolateByBoxId(boxId);
       return resultProblem;
     } catch (error) {
       console.log(error);

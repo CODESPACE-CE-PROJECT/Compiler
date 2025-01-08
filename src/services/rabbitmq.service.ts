@@ -41,6 +41,8 @@ export const rabbitMQService = {
     const channel: Channel = await connection.createChannel();
     await channel.assertQueue("compiler", { durable: true });
     await channel.assertQueue("submission", { durable: true });
+    await channel.assertQueue("learnify-submission", { durable: true })
+
     channel.consume("submission", async (msg: ConsumeMessage | null) => {
       try {
         if (!msg) {
@@ -86,6 +88,7 @@ export const rabbitMQService = {
         }
         channel.ack(msg);
       } catch (error) {
+        console.log(error)
         throw new Error("Error receiveData");
       }
     });
@@ -139,7 +142,6 @@ export const rabbitMQService = {
         const resultProblem = await resultService.outputResultWithTestCaseLeanify(submission)
         console.log(resultProblem)
         if ("status" in resultProblem) {
-
           // save to learnify database
         } else {
           throw new Error("Error To Submission File: " + resultProblem.result);

@@ -8,6 +8,7 @@ export interface ICreateFile {
 
 export interface ICompileFile {
   result: string;
+  exeFile: string;
 }
 
 export interface ICompileRequest {
