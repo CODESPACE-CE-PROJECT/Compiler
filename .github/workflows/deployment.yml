@@ -34,14 +34,15 @@ jobs:
                 REDISHOST: ${{ secrets.REDISHOST }}
                 BACKEND_URL: ${{ secrets.BACKEND_URL }} 
                 JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                LEARNIFY_TOKEN_API: ${{ secrets.LEARNIFY_TOKEN_API }}
               run: |
                 echo "JWT_SECRET=$JWT_SECRET" >> .env
                 echo "RMQUSER=$RMQUSER" >> .env
                 echo "RMQPASS=$RMQPASS" >> .env
                 echo "RMQHOST=$RMQHOST" >> .env
-                echo "RMQNAME=$RMQNAME" >> .env
                 echo "REDISHOST=$REDISHOST" >> .env
                 echo "BACKEND_URL=$BACKEND_URL" >> .env
+                echo "LEARNIFY_TOKEN_API=$LEARNIFY_TOKEN_API" >> .env
 
             - name: Clear Cache 🫧
               run: |
