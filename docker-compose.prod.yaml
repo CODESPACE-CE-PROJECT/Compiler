@@ -16,6 +16,7 @@ services:
       REDISHOST: ${REDISHOST}
       BACKEND_URL: ${BACKEND_URL} 
       JWT_SECRET: ${JWT_SECRET} 
+      LEARNIFY_TOKEN_API: ${LEARNIFY_TOKEN_API}
     restart: unless-stopped
     labels:
       traefik.enable: "true"
