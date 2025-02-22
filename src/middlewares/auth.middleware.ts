@@ -14,7 +14,6 @@ export const authorization = async (
   res: Response,
   next: NextFunction,
 ) => {
-
   const token: string | undefined = req.headers.authorization?.split(" ")[1];
   if (!token) {
     return res.status(401).json({ message: "UNAUTHORIZED" });
@@ -36,8 +35,12 @@ export const authorization = async (
   }
 };
 
-export const authorizationAPIKey = async (req: Request, res: Response, next: NextFunction) => {
-  const token: string | undefined = req.header('x-api-key')
+export const authorizationAPIKey = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const token: string | undefined = req.header("x-api-key");
   if (!token) {
     return res.status(401).json({ message: "Invalid API Key" });
   }
@@ -49,4 +52,4 @@ export const authorizationAPIKey = async (req: Request, res: Response, next: Nex
   } catch (error) {
     return res.status(401).json({ message: "Invalid API Key" });
   }
-} 
+};

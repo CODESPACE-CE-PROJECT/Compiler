@@ -6,15 +6,13 @@ export const submissionService = {
     try {
       const response = await api.post("/submission", body, {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 20000
+        timeout: 20000,
       });
       return response.data;
     } catch (error: any) {
       throw new Error("Error Create Submission");
     }
   },
-  learnifySubmit: async (body: ISubmission, token: string | undefined) => {
 
-  }
+  learnifySubmit: async (body: ISubmission, token: string | undefined) => {},
 };
-
