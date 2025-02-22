@@ -1,6 +1,10 @@
 import client, { Connection, Channel, ConsumeMessage } from "amqplib";
 import { environment } from "../config/environment";
-import { IResultSubmission, ISubmissionLearnify, ISubmissionRequest } from "../interfaces/submission.interface";
+import {
+  IResultSubmission,
+  ISubmissionLearnify,
+  ISubmissionRequest,
+} from "../interfaces/submission.interface";
 import {
   ICompileRequest,
   languageType,
@@ -11,7 +15,7 @@ import { problemService } from "./problem.service";
 import { ITestCase } from "../interfaces/testcase.interface";
 import { submissionService } from "./submission.service";
 import { checkRedisHealth, publicTopic, redisClient } from "./redis.service";
-import logger from '../utils/logger.util'
+import logger from "../utils/logger.util";
 
 export const rabbitMQService = {
   sendDataToQueue: async (queueName: string, data: any) => {
@@ -34,14 +38,14 @@ export const rabbitMQService = {
     const connection: Connection = await client.connect(
       `amqp://${environment.RMQUSER}:${environment.RMQPASS}@${environment.RMQHOST}:5672`,
     );
-    await redisClient.connect()
+    await redisClient.connect();
     if (await checkRedisHealth()) {
-      logger.info("Redis Connected")
+      logger.info("Redis Connected");
     }
     const channel: Channel = await connection.createChannel();
     await channel.assertQueue("compiler", { durable: true });
     await channel.assertQueue("submission", { durable: true });
-    await channel.assertQueue("learnify-submission", { durable: true })
+    await channel.assertQueue("learnify-submission", { durable: true });
 
     channel.consume("submission", async (msg: ConsumeMessage | null) => {
       try {
@@ -66,29 +70,42 @@ export const rabbitMQService = {
           submission,
           testcases,
         );
+
         if ("status" in resultProblem) {
-          const resultSubmit: IResultSubmission = await submissionService.submit(
-            {
-              problemId: submission.problemId,
-              sourceCode: submission.sourceCode,
-              results: resultProblem.result,
-              stateSubmission: resultProblem.status ? "PASS" : "FAILED",
-            },
-            submission.token,
+          const resultSubmit: IResultSubmission =
+            await submissionService.submit(
+              {
+                problemId: submission.problemId,
+                sourceCode: submission.sourceCode,
+                results: resultProblem.result,
+                stateSubmission: resultProblem.status ? "PASS" : "FAILED",
+              },
+              submission.token,
+            );
+
+          redisClient.set(
+            `submission-${resultSubmit.data.username}`,
+            JSON.stringify({ submissionId: resultSubmit.data.submissionId }),
+            { EX: 240 },
           );
 
-          redisClient.set(`submission-${resultSubmit.data.username}`, JSON.stringify({ submissionId: resultSubmit.data.submissionId }), { EX: 240 })
+          redisClient.set(`submissionState-${submission.username}`, "false", {
+            EX: 240,
+          });
 
-          redisClient.set(`submissionState-${submission.username}`, "false", { EX: 240 })
-
-          publicTopic('submission', JSON.stringify({ submissionId: resultSubmit.data.submissionId, username: resultSubmit.data.username }))
-
+          publicTopic(
+            "submission",
+            JSON.stringify({
+              submissionId: resultSubmit.data.submissionId,
+              username: resultSubmit.data.username,
+            }),
+          );
         } else {
           throw new Error("Error To Submission File: " + resultProblem.result);
         }
         channel.ack(msg);
       } catch (error) {
-        console.log(error)
+        console.log(error);
         throw new Error("Error receiveData");
       }
     });
@@ -113,44 +130,53 @@ export const rabbitMQService = {
           updateFileName,
         );
 
-        await redisClient.set(`compiler-${data.username}`, JSON.stringify(outputResult), { EX: 240 })
-        const updateOutputResult = { ...outputResult, username: data.username }
-        publicTopic('compiler', JSON.stringify(updateOutputResult))
-
-        channel.ack(msg);
-      } catch (error) {
-        console.log(error)
-        throw new Error("Error receiveData");
-      }
-    });
-
-    channel.consume("learnify-submission", async (msg: ConsumeMessage | null) => {
-      try {
-        if (!msg) {
-          throw new Error("Invalid Incoming Message");
-        }
-        const submission: ISubmissionLearnify = JSON.parse(
-          msg?.content.toString() as string,
+        await redisClient.set(
+          `compiler-${data.username}`,
+          JSON.stringify(outputResult),
+          { EX: 240 },
         );
-        const updateSourceCode = strip(submission.sourceCode);
-        const updateFileName =
-          submission.language === languageType.JAVA
-            ? submission.fileName
-            : `${process.pid}`;
-        submission.sourceCode = updateSourceCode;
-        submission.fileName = updateFileName;
-        const resultProblem = await resultService.outputResultWithTestCaseLeanify(submission)
-        console.log(resultProblem)
-        if ("status" in resultProblem) {
-          // save to learnify database
-        } else {
-          throw new Error("Error To Submission File: " + resultProblem.result);
-        }
+        const updateOutputResult = { ...outputResult, username: data.username };
+        publicTopic("compiler", JSON.stringify(updateOutputResult));
+
         channel.ack(msg);
       } catch (error) {
+        console.log(error);
         throw new Error("Error receiveData");
       }
     });
 
+    channel.consume(
+      "learnify-submission",
+      async (msg: ConsumeMessage | null) => {
+        try {
+          if (!msg) {
+            throw new Error("Invalid Incoming Message");
+          }
+          const submission: ISubmissionLearnify = JSON.parse(
+            msg?.content.toString() as string,
+          );
+          const updateSourceCode = strip(submission.sourceCode);
+          const updateFileName =
+            submission.language === languageType.JAVA
+              ? submission.fileName
+              : `${process.pid}`;
+          submission.sourceCode = updateSourceCode;
+          submission.fileName = updateFileName;
+          const resultProblem =
+            await resultService.outputResultWithTestCaseLeanify(submission);
+          console.log(resultProblem);
+          if ("status" in resultProblem) {
+            // save to learnify database
+          } else {
+            throw new Error(
+              "Error To Submission File: " + resultProblem.result,
+            );
+          }
+          channel.ack(msg);
+        } catch (error) {
+          throw new Error("Error receiveData");
+        }
+      },
+    );
   },
 };

@@ -1,5 +1,8 @@
 import { languageType } from "../interfaces/compiler.interface";
-import { ISubmissionLearnify, ISubmissionRequest } from "../interfaces/submission.interface";
+import {
+  ISubmissionLearnify,
+  ISubmissionRequest,
+} from "../interfaces/submission.interface";
 import { ITestCase } from "../interfaces/testcase.interface";
 import { testCaseUtils } from "../utils/testcase.util";
 import { compilerService } from "./compiler.service";
@@ -17,7 +20,6 @@ const generateUniqueBoxId = (): number => {
 
   return boxId;
 };
-
 
 export const resultService = {
   outputResultWithTestCase: async (
@@ -38,11 +40,8 @@ export const resultService = {
         return { result: createFileResult };
       }
 
-      const { result: resultCompile, exeFile } = await compilerService.compileFile(
-        filePath,
-        submission.language,
-        file,
-      );
+      const { result: resultCompile, exeFile } =
+        await compilerService.compileFile(filePath, submission.language, file);
 
       const inputs = testCaseUtils.input(testcases);
       const expectedOutputs = testCaseUtils.output(testcases);
@@ -53,14 +52,14 @@ export const resultService = {
         inputs.map(async (input: string) => {
           const boxId = generateUniqueBoxId();
 
+          if (resultCompile) {
+            return { result: resultCompile };
+          }
+
           const { result: moveFileResult, sanboxPath } =
             await compilerService.moveFileToIsolate(exeFile, boxId);
           if (moveFileResult !== "") {
             return { result: moveFileResult };
-          }
-
-          if (resultCompile) {
-            return { result: resultCompile };
           }
 
           const result = await compilerService.Run(
@@ -72,7 +71,7 @@ export const resultService = {
           );
 
           await compilerService.removeIsolateByBoxId(boxId);
-          return result
+          return result;
         }),
       );
       const resultProblem = await compilerService.generateReusltProblem(
@@ -86,9 +85,7 @@ export const resultService = {
     }
   },
 
-  outputResultWithTestCaseLeanify: async (
-    submission: ISubmissionLearnify,
-  ) => {
+  outputResultWithTestCaseLeanify: async (submission: ISubmissionLearnify) => {
     try {
       const {
         result: createFileResult,
@@ -121,7 +118,9 @@ export const resultService = {
       }
 
       const inputs = submission.testCases.map((testcase) => testcase.input);
-      const expectedOutputs = submission.testCases.map((testcase) => testcase.expectedOutput);
+      const expectedOutputs = submission.testCases.map(
+        (testcase) => testcase.expectedOutput,
+      );
       if (inputs.length !== expectedOutputs.length) {
         return { result: "TestCase Error" };
       }
@@ -163,20 +162,22 @@ export const resultService = {
       if (createFileResult !== "") {
         return { result: createFileResult };
       }
-      const boxId = process.pid % 1000;
-      const { result: moveFileResult, sanboxPath } =
-        await compilerService.moveFileToIsolate(filePath, boxId);
-      if (moveFileResult !== "") {
-        return { result: moveFileResult };
-      }
-      const { result: resultCompile } = await compilerService.compileFile(
-        sanboxPath,
-        language,
-        file,
-      );
+
+      const { result: resultCompile, exeFile } =
+        await compilerService.compileFile(filePath, language, file);
+
       if (resultCompile) {
         return { result: resultCompile };
       }
+
+      const boxId = generateUniqueBoxId();
+      const { result: moveFileResult, sanboxPath } =
+        await compilerService.moveFileToIsolate(exeFile, boxId);
+
+      if (moveFileResult !== "") {
+        return { result: moveFileResult };
+      }
+
       const { result: resultRun } = await compilerService.Run(
         boxId,
         language,
