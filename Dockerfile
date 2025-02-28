@@ -4,13 +4,13 @@ FROM node:20.18.0-alpine AS development
 WORKDIR /usr/src/app
 
 # Copy package files
-COPY --chown=node:node package.json yarn.lock ./
+COPY --chown=root:root package.json yarn.lock ./
 
 # Install dependencies
 RUN yarn install
 
 # Copy the rest of the app files
-COPY --chown=node:node . .
+COPY --chown=root:root . .
 
 # Set environment variables for hot reload
 ENV NODE_ENV=development
@@ -21,13 +21,13 @@ FROM node:20.18.0-alpine AS build
 WORKDIR /usr/src/app
 
 # Copy necessary files for the build
-COPY --chown=node:node package.json yarn.lock ./
+COPY --chown=root:root package.json yarn.lock ./
 
 # Copy node_modules from development
-COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
+COPY --chown=root:root --from=development /usr/src/app/node_modules ./node_modules
 
 # Copy app files and build the app
-COPY --chown=node:node . .
+COPY --chown=root:root . .
 RUN yarn build
 
 # Install only production dependencies
@@ -59,13 +59,12 @@ RUN git clone https://github.com/ioi/isolate.git && \
   rm -rf /isolate
 
 WORKDIR /usr/src/app
-
 # Copy the built app and node_modules from the build stage
-COPY --chown=node:node --from=build /usr/src/app/dist ./dist
-COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
+COPY --chown=root:root --from=build /usr/src/app/dist ./dist
+COPY --chown=root:root --from=build /usr/src/app/node_modules ./node_modules
 
 # Set the node user for running the app
-USER node
+USER root
 
 # Expose the port
 EXPOSE 3002
