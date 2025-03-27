@@ -12,6 +12,13 @@ export const analyzeCode = async (submission: ISubmissionRequest) => {
     submission.token,
   );
 
+  if (testCase.data.constraint.length < 1) {
+    return {
+      functions: [],
+      imports: [],
+    };
+  }
+
   const targetFunctions: string[] = testCase.data.constraint.flatMap((item) =>
     item.type === ConstraintType.FUNCTION ? [item.keyword] : [],
   );

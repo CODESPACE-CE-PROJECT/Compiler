@@ -1,0 +1,47 @@
+name: Deployment CE Cloud
+on:
+  push:
+    branches: ["main"]
+jobs:
+  deploy:
+    runs-on: ce-cloud
+    if: github.event_name == 'push'
+    steps:
+      - name: Clone Repo 🤖
+        uses: actions/checkout@v3
+      - name: Set Environment Variables 🔠
+        env:
+          RMQUSER: ${{ secrets.RMQUSER }}
+          RMQPASS: ${{ secrets.RMQPASS }}
+          RMQHOST: ${{ secrets.RMQHOST }}
+          REDISHOST: ${{ secrets.REDISHOST }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET_CE_CLOUD }}
+          LEARNIFY_TOKEN_API: ${{ secrets.LEARNIFY_TOKEN_API }}
+        run: |
+          echo "JWT_SECRET=$JWT_SECRET" >> .env
+          echo "RMQUSER=$RMQUSER" >> .env
+          echo "RMQPASS=$RMQPASS" >> .env
+          echo "RMQHOST=$RMQHOST" >> .env
+          echo "REDISHOST=$REDISHOST" >> .env
+          echo "BACKEND_URL=$BACKEND_URL" >> .env
+          echo "LEARNIFY_TOKEN_API=$LEARNIFY_TOKEN_API" >> .env
+
+      - name: Clear Cache 🫧
+        run: |
+          docker stop compiler || true
+          docker rm compiler || true
+          docker rmi compiler-compiler:latest || true
+
+      - name: Run Image ✅
+        run: |
+          docker compose -f docker-compose.ce-cloud.yaml up -d
+
+      - name: Message ✉️
+        uses: fjogeleit/http-request-action@v1
+        with:
+          timeout: 60000
+          url: ${{ secrets.DISCORD_WEBHOOK }}
+          method: "POST"
+          customHeaders: '{"Content-Type": "application/json"}'
+          data: '{"content": "CE PROJECT Compiler CE Cloud ✅","embeds": [{"title": "Compiler URL","description": "https://ce67-07.cloud.ce.kmitl.ac.th/compiler"}]}'
