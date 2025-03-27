@@ -1,0 +1,23 @@
+---
+networks:
+  backend:
+    external: true
+services:
+  compiler:
+    container_name: compiler
+    build:
+      context: .
+      dockerfile: Dockerfile
+    privileged: true
+    environment:
+      PORT: 3002
+      RMQUSER: ${RMQUSER}
+      RMQPASS: ${RMQPASS}
+      RMQHOST: ${RMQHOST}
+      REDISHOST: ${REDISHOST}
+      BACKEND_URL: ${BACKEND_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      LEARNIFY_TOKEN_API: ${LEARNIFY_TOKEN_API}
+    restart: unless-stopped
+    networks:
+      - backend
